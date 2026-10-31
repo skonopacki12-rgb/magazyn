@@ -4,6 +4,20 @@ import { hashPassword, PBKDF2_ITERATIONS, randomHex, safeEqual, sha256 } from '.
 interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
+  /** Optional comma-separated e-mails that may still register after the first account exists. */
+  ALLOWED_EMAILS?: string;
+}
+
+/**
+ * The app is for one owner: registration is open only while there are no accounts,
+ * or for addresses listed in the ALLOWED_EMAILS variable (Cloudflare dashboard → Settings → Variables).
+ */
+async function registrationOpen(env: Env, email?: string): Promise<boolean> {
+  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first<{ n: number }>();
+  if (!row?.n) return true;
+  if (!email) return false;
+  const allowed = (env.ALLOWED_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return allowed.some((a) => a === email || (a.startsWith('*@') && email.endsWith(a.slice(1))));
 }
 
 const COOKIE = 'magazyn_session';
@@ -78,6 +92,7 @@ async function register(env: Env, req: Request) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(400, 'Podaj poprawny adres e-mail.');
   if (password.length < 8) throw new HttpError(400, 'Hasło musi mieć co najmniej 8 znaków.');
 
+  if (!(await registrationOpen(env, email))) throw new HttpError(403, 'Rejestracja jest zamknięta. Zaloguj się na istniejące konto.');
   const exists = await env.DB.prepare('SELECT 1 FROM users WHERE email = ?').bind(email).first();
   if (exists) throw new HttpError(409, 'Konto z tym adresem już istnieje.');
 
@@ -163,6 +178,8 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
       return login(env, req);
     case 'POST /api/auth/logout':
       return logout(env, req);
+    case 'GET /api/auth/config':
+      return json({ registration: await registrationOpen(env) });
     case 'GET /api/auth/me': {
       const u = await currentUser(env, req);
       return json({ user: u ? publicUser(u) : null });

@@ -49,6 +49,9 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 - **Rejestracja / logowanie** (`/rejestracja`, `/logowanie`): hasła hashowane PBKDF2-SHA256
   (100 000 iteracji, losowa sól), sesja w ciasteczku `HttpOnly`, `SameSite=Lax`, `Secure` na HTTPS,
   ważna 30 dni. W bazie jest tylko skrót SHA-256 tokenu sesji.
+- **Rejestracja jest zamknięta**, gdy w bazie istnieje już konto (aplikacja dla jednego właściciela).
+  Dodatkowe adresy można dopuścić zmienną `ALLOWED_EMAILS` (lista po przecinku, `*@domena` = cała domena)
+  w panelu Cloudflare: Workers & Pages → magazyn2 → Settings → Variables and Secrets.
 - **Nowe konto** dostaje magazyn z 18 przykładowymi produktami.
 - **Zapis danych:** zmiany widać od razu, a ok. 0,6 s później zapisują się w D1
   (natychmiast przy ukryciu/zamknięciu karty). Brak sieci → komunikat i ponawianie.

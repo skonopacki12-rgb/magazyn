@@ -31,6 +31,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   me: () => request<{ user: User | null }>('GET', '/api/auth/me'),
+  config: () => request<{ registration: boolean }>('GET', '/api/auth/config'),
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/auth/login', { email, password }),
   register: (name: string, email: string, password: string) => request<{ user: User }>('POST', '/api/auth/register', { name, email, password }),
   logout: () => request<{ ok: true }>('POST', '/api/auth/logout'),

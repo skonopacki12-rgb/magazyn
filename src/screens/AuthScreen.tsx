@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { api, type User } from '../lib/api';
 
@@ -14,6 +14,17 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
   const [password2, setPassword2] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Registration closes once the owner's account exists.
+  const [canRegister, setCanRegister] = useState(true);
+  useEffect(() => {
+    api
+      .config()
+      .then((c) => setCanRegister(c.registration))
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => {
+    if (!canRegister && pathname === '/rejestracja') navigate('/logowanie', { replace: true });
+  }, [canRegister, pathname, navigate]);
 
   const switchTo = (m: Mode) => {
     setError(null);
@@ -49,14 +60,16 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
           </p>
         </div>
 
-        <div className="seg" role="group" aria-label="Rodzaj formularza">
-          <button type="button" className="seg__btn" style={{ flex: 1 }} aria-pressed={mode === 'login'} onClick={() => switchTo('login')}>
-            Logowanie
-          </button>
-          <button type="button" className="seg__btn" style={{ flex: 1 }} aria-pressed={mode === 'register'} onClick={() => switchTo('register')}>
-            Rejestracja
-          </button>
-        </div>
+        {canRegister && (
+          <div className="seg" role="group" aria-label="Rodzaj formularza">
+            <button type="button" className="seg__btn" style={{ flex: 1 }} aria-pressed={mode === 'login'} onClick={() => switchTo('login')}>
+              Logowanie
+            </button>
+            <button type="button" className="seg__btn" style={{ flex: 1 }} aria-pressed={mode === 'register'} onClick={() => switchTo('register')}>
+              Rejestracja
+            </button>
+          </div>
+        )}
 
         <form className="stack-4" style={{ gap: 14 }} onSubmit={submit} noValidate>
           {mode === 'register' && (
@@ -125,12 +138,14 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
           </button>
         </form>
 
-        <p className="hint hint--center">
-          {mode === 'login' ? 'Nie masz konta? ' : 'Masz już konto? '}
-          <button type="button" className="link-btn" onClick={() => switchTo(mode === 'login' ? 'register' : 'login')}>
-            {mode === 'login' ? 'Zarejestruj się' : 'Zaloguj się'}
-          </button>
-        </p>
+        {canRegister && (
+          <p className="hint hint--center">
+            {mode === 'login' ? 'Nie masz konta? ' : 'Masz już konto? '}
+            <button type="button" className="link-btn" onClick={() => switchTo(mode === 'login' ? 'register' : 'login')}>
+              {mode === 'login' ? 'Zarejestruj się' : 'Zaloguj się'}
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
