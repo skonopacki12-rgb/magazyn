@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatDate, todayIso } from '../lib/text';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { ProductPicker, RowSizer, ShelfPreview } from '../components/Shelf';
@@ -366,7 +367,11 @@ export function ShelfEditor() {
 
       {mode === 'preview' && (
         <>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 20px' }}>
+            <button type="button" className="btn btn--primary btn--md" onClick={() => window.print()}>
+              <Icon name="copy" size={18} />
+              Drukuj planogram
+            </button>
             <label className="ret__check" style={{ fontSize: 14 }}>
               <input type="checkbox" checked={showStock} onChange={() => setShowStock(!showStock)} />
               Pokaż stany, otwarte i terminy
@@ -377,6 +382,7 @@ export function ShelfEditor() {
             </label>
           </div>
           <ShelfPreview shelf={shelf} byId={byId} showStock={showStock} captions={captions} over={over} />
+          <PrintSheet shelf={shelf} byId={byId} />
           {showStock && (
             <p className="hint">
               Liczba = sztuki tego produktu na półce {shelf.name} wg partii · <span className="rack__dot is-low" style={{ display: 'inline-block' }} /> otwarta
@@ -415,5 +421,26 @@ export function ShelfEditor() {
         }}
       />
     </Page>
+  );
+}
+
+/** Printed planogram: shelf name and date, the shelf with captions, and a row-by-row list. Only visible on paper. */
+function PrintSheet({ shelf, byId }: { shelf: ShelfDef; byId: (id: string) => import('../lib/types').StockedProduct | undefined }) {
+  return (
+    <div className="print-sheet" aria-hidden="true">
+      <div className="print-sheet__head">
+        <span className="shelf-tag shelf-tag--lg">{shelf.name}</span>
+        <span>Planogram półki · {formatDate(todayIso())}</span>
+      </div>
+      <ShelfPreview shelf={shelf} byId={byId} captions />
+      <ol className="print-sheet__list">
+        {shelf.rows.map((r, i) => (
+          <li key={r.id}>
+            <strong>Rząd {i + 1}:</strong>{' '}
+            {r.slots.map((pid, j) => `${j + 1}. ${pid ? (byId(pid)?.name ?? '?') + ` (${byId(pid)?.code ?? ''})` : '— puste —'}`).join('; ')}
+          </li>
+        ))}
+      </ol>
+    </div>
   );
 }

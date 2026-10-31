@@ -172,6 +172,9 @@ mają 12 automatycznie (folder: „tacka 12 szt.”).
 - **Podgląd** — półka „jak w rzeczywistości”: deski i zdjęcia butelek w miejscach; opcjonalnie stany na
   tej półce (wg partii), otwarte butelki i terminy oraz podpisy.
 
+- **Drukuj planogram** (w podglądzie) — kartka A4 w poziomie: nazwa półki, data, półka ze zdjęciami
+  i podpisami oraz lista butelek rząd po rzędzie (z kodami) — do powieszenia przy regale.
+
 Przy przyjęciu dostawy **„Podziel na partie”** pozwala rozpisać jedną pozycję na kilka partii —
 każda z własną ilością, półką i datą ważności.
 

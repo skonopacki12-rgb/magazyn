@@ -2843,3 +2843,54 @@ button.rack__slot:hover {
   border-bottom: 1px solid var(--line-soft);
   vertical-align: middle;
 }
+
+/* ───────── Print (planogram) ───────── */
+.print-sheet {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body {
+    background: #fff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+  .print-sheet {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .print-sheet__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+  .print-sheet .rack {
+    --row-h: 34mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .print-sheet .rack__cap {
+    font-size: 7pt;
+    line-height: 9pt;
+    white-space: normal;
+  }
+  .print-sheet__list {
+    margin-top: 8px;
+    font-size: 9pt;
+    line-height: 13pt;
+  }
+}
