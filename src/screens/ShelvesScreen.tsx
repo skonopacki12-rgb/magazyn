@@ -163,11 +163,30 @@ export function ShelfEditor() {
     [rows[r], rows[j]] = [rows[j], rows[r]];
     save({ rows });
   };
+  // Only bottles that exist (stock from inventory / deliveries) can stand on shelves: one slot = one bottle.
+  const inStock = products.filter((p) => p.qty > 0);
+  const placedElsewhere = new Map<string, number>();
+  for (const s of shelves)
+    if (s.id !== shelf.id) for (const r of s.rows) for (const pid of r.slots) if (pid) placedElsewhere.set(pid, (placedElsewhere.get(pid) ?? 0) + 1);
+  const placedHere = new Map<string, number>();
+  const over = new Set<string>();
+  shelf.rows.forEach((r, ri) =>
+    r.slots.forEach((pid, si) => {
+      if (!pid) return;
+      const n = (placedHere.get(pid) ?? 0) + 1;
+      placedHere.set(pid, n);
+      const p = byId(pid);
+      if (!p || n + (placedElsewhere.get(pid) ?? 0) > p.qty) over.add(`${ri}-${si}`);
+    }),
+  );
+  const freeOf = (pid: string) => (byId(pid)?.qty ?? 0) - (placedElsewhere.get(pid) ?? 0) - (placedHere.get(pid) ?? 0);
+  const clearOver = () => save({ rows: shelf.rows.map((r, ri) => ({ ...r, slots: r.slots.map((pid, si) => (over.has(`${ri}-${si}`) ? null : pid)) })) });
+
   // Products that sit on this shelf according to lots (FIFO data) — suggested first.
-  const onShelf = products.filter((p) => (p.lots ?? []).some((l) => (l.shelf ?? '') === shelf.name));
-  const placed = new Set(shelf.rows.flatMap((r) => r.slots).filter(Boolean));
-  const notPlaced = onShelf.filter((p) => !placed.has(p.id));
+  const onShelf = inStock.filter((p) => (p.lots ?? []).some((l) => (l.shelf ?? '') === shelf.name));
+  const notPlaced = onShelf.filter((p) => !placedHere.has(p.id) && freeOf(p.id) > 0);
   const placeNext = (pid: string) => {
+    if (freeOf(pid) <= 0) return;
     for (let r = 0; r < shelf.rows.length; r++) {
       const i = shelf.rows[r].slots.indexOf(null);
       if (i >= 0) {
@@ -305,6 +324,19 @@ export function ShelfEditor() {
 
       {mode === 'products' && (
         <>
+          {over.size > 0 && (
+            <div className="card over-warn" role="alert">
+              <span style={{ flex: 1 }}>
+                <strong>
+                  {over.size} {plural(over.size, 'miejsce', 'miejsca', 'miejsc')} ponad stan
+                </strong>{' '}
+                — tych butelek nie ma już w magazynie (np. po szkoleniu albo wyrzuceniu). Zaznaczone na czerwono.
+              </span>
+              <button type="button" className="btn btn--outline" onClick={clearOver}>
+                Opróżnij miejsca ponad stan
+              </button>
+            </div>
+          )}
           {notPlaced.length > 0 && (
             <div className="card shelf-suggest">
               <span className="hint">Na tej półce wg partii, jeszcze bez miejsca — kliknij, aby wstawić w pierwsze wolne:</span>
@@ -312,13 +344,14 @@ export function ShelfEditor() {
                 {notPlaced.map((p) => (
                   <button key={p.id} type="button" className="chip" style={{ minHeight: 40 }} onClick={() => placeNext(p.id)}>
                     {p.name}
+                    <span className="chip__n">wolne {freeOf(p.id)}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <p className="hint">Kliknij miejsce, aby wstawić butelkę albo ją zmienić.</p>
-          <ShelfPreview shelf={shelf} byId={byId} captions onSlot={(row, slot) => setPick({ row, slot })} />
+          <p className="hint">Kliknij miejsce, aby wstawić butelkę albo ją zmienić. Do wyboru są tylko produkty ze stanem — każde miejsce to jedna butelka.</p>
+          <ShelfPreview shelf={shelf} byId={byId} captions over={over} onSlot={(row, slot) => setPick({ row, slot })} />
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="button" className="btn btn--primary btn--md" onClick={() => setMode('preview')}>
               Dalej: podgląd
@@ -339,7 +372,7 @@ export function ShelfEditor() {
               Podpisy
             </label>
           </div>
-          <ShelfPreview shelf={shelf} byId={byId} showStock={showStock} captions={captions} />
+          <ShelfPreview shelf={shelf} byId={byId} showStock={showStock} captions={captions} over={over} />
           {showStock && (
             <p className="hint">
               Liczba = sztuki tego produktu na półce {shelf.name} wg partii · <span className="rack__dot is-low" style={{ display: 'inline-block' }} /> otwarta
@@ -351,8 +384,9 @@ export function ShelfEditor() {
 
       <ProductPicker
         open={!!pick}
-        products={products}
+        products={inStock}
         suggested={onShelf}
+        free={(p) => freeOf(p.id) + (current === p.id ? 1 : 0)}
         current={current ? byId(current) : undefined}
         title={pick ? `Rząd ${pick.row + 1}, miejsce ${pick.slot + 1}` : ''}
         onClose={() => setPick(null)}
@@ -365,7 +399,14 @@ export function ShelfEditor() {
         onPick={(p, fillRow) => {
           if (!pick) return;
           const row = shelf.rows[pick.row];
-          setRow(pick.row, { ...row, slots: row.slots.map((x, i) => (i === pick.slot || (fillRow && x === null) ? p.id : x)) });
+          // Never place more bottles than are free: this slot first, then empty slots of the row.
+          let left = freeOf(p.id) + (current === p.id ? 1 : 0);
+          const slots = row.slots.map((x, i) => {
+            if (i === pick.slot) return left-- > 0 ? p.id : x;
+            return x;
+          });
+          if (fillRow) for (let i = 0; i < slots.length && left > 0; i++) if (slots[i] === null) (slots[i] = p.id), left--;
+          setRow(pick.row, { ...row, slots });
           setPick(null);
         }}
       />

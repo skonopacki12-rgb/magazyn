@@ -45,10 +45,12 @@ interface PreviewProps {
   captions?: boolean;
   size?: 'sm' | 'md';
   onSlot?: (row: number, slot: number) => void;
+  /** Slots (`row-slot`) holding more bottles than there are in stock — drawn in red. */
+  over?: Set<string>;
 }
 
 /** "Real-life" view of a shelf: rows as boards with product photos standing in their slots. */
-export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', onSlot }: PreviewProps) {
+export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', onSlot, over }: PreviewProps) {
   return (
     <div className={`rack rack--${size}`} role="img" aria-label={`Podgląd półki ${shelf.name}`}>
       {shelf.rows.map((row, r) => (
@@ -67,8 +69,8 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
                   {...(onSlot
                     ? { type: 'button' as const, onClick: () => onSlot(r, i), 'aria-label': `Rząd ${r + 1}, miejsce ${i + 1}: ${p?.name ?? 'puste'}` }
                     : {})}
-                  className={`rack__slot${p ? '' : ' is-empty'}`}
-                  title={p ? `${p.name} (${p.code})` : 'Puste miejsce'}
+                  className={`rack__slot${p || pid ? '' : ' is-empty'}${over?.has(`${r}-${i}`) ? ' is-over' : ''}`}
+                  title={over?.has(`${r}-${i}`) ? `Ponad stan: ${p?.name ?? 'produkt usunięty'}` : p ? `${p.name} (${p.code})` : 'Puste miejsce'}
                 >
                   {p?.image ? (
                     <img src={p.image} alt="" loading="lazy" />
@@ -120,6 +122,7 @@ export function ProductPicker({
   current,
   title,
   suggested,
+  free,
   onPick,
   onClear,
   onClose,
@@ -130,6 +133,8 @@ export function ProductPicker({
   title: string;
   /** Products that sit on this shelf according to lots — shown first. */
   suggested: StockedProduct[];
+  /** Bottles of `p` that can still be placed in this slot (stock minus bottles already on shelves). */
+  free: (p: StockedProduct) => number;
   onPick: (p: StockedProduct, fillRow: boolean) => void;
   onClear: () => void;
   onClose: () => void;
@@ -179,28 +184,39 @@ export function ProductPicker({
         <SearchField id="picker-q" size="filter" value={q} onChange={setQ} placeholder="Szukaj produktu (nazwa, kod)" label="Szukaj produktu" />
         <label className="ret__check" style={{ fontSize: 14 }}>
           <input type="checkbox" checked={fillRow} onChange={() => setFillRow(!fillRow)} />
-          Wstaw też we wszystkie puste miejsca tego rzędu
+          Wstaw też w puste miejsca tego rzędu (tyle, ile jest wolnych butelek)
         </label>
         <ul className="rows picker__list">
-          {list.map((p) => (
-            <li key={p.id}>
-              <button type="button" className="row-link" style={{ minHeight: 60 }} onClick={() => onPick(p, fillRow)}>
-                <Thumb src={p.image} size="sm" />
-                <span className="stack-2" style={{ flex: 1 }}>
-                  <span className="row-name" style={{ fontSize: 15, lineHeight: '20px' }}>
-                    {p.name}
+          {list.map((p) => {
+            const f = free(p);
+            return (
+              <li key={p.id}>
+                <button type="button" className="row-link picker__item" style={{ minHeight: 60 }} disabled={f <= 0} onClick={() => onPick(p, fillRow)}>
+                  <Thumb src={p.image} size="sm" />
+                  <span className="stack-2" style={{ flex: 1 }}>
+                    <span className="row-name" style={{ fontSize: 15, lineHeight: '20px' }}>
+                      {p.name}
+                    </span>
+                    <span className="code">
+                      {p.code}
+                      {sugg.has(p.id) ? ' · na tej półce wg partii' : ''}
+                    </span>
                   </span>
-                  <span className="code">
-                    {p.code}
-                    {sugg.has(p.id) ? ' · na tej półce wg partii' : ''}
+                  <span className={`picker__free${f > 0 ? '' : ' is-none'}`}>
+                    {f > 0 ? `wolne ${f}` : 'wszystkie na półkach'}
+                    <span className="hint" style={{ display: 'block', color: 'inherit', fontWeight: 400 }}>
+                      stan {p.qty} {p.unit}
+                    </span>
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
+                </button>
+              </li>
+            );
+          })}
           {!list.length && (
             <li className="hint" style={{ padding: 14 }}>
-              Brak produktów.
+              {products.length
+                ? 'Nic nie pasuje.'
+                : 'Brak produktów na stanie. Na półkę wstawisz tylko butelki policzone w inwentaryzacji albo przyjęte z dostawy.'}
             </li>
           )}
         </ul>

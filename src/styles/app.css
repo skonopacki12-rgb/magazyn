@@ -2687,3 +2687,40 @@ button.rack__slot:hover {
   width: 44px;
   height: 56px;
 }
+
+.rack__slot.is-over {
+  outline: 3px solid var(--out-bg);
+  outline-offset: -3px;
+  border-radius: 6px;
+  background: rgba(166, 27, 27, 0.08);
+}
+.picker__item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.picker__free {
+  flex: none;
+  text-align: right;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+  color: var(--ok-ink);
+}
+.picker__free.is-none {
+  color: var(--muted);
+}
+.over-warn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 14px;
+  border-color: var(--out-bg);
+  background: #fdf1f1;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.over-warn > span {
+  flex: 1 1 240px !important;
+}

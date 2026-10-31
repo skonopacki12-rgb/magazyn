@@ -119,6 +119,10 @@ mają 12 automatycznie (folder: „tacka 12 szt.”).
   (klik w ostatni zaznaczony usuwa jedno). Rzędy można dodawać, usuwać i przesuwać.
 - **Produkty** — klikasz miejsce i wybierasz produkt (opcja: wypełnij wszystkie puste miejsca w rzędzie).
   Produkty, które według partii leżą na tej półce, są podpowiadane jako pierwsze.
+- Na półkę wstawiasz **tylko produkty ze stanem** (policzone w inwentaryzacji lub przyjęte z dostawy).
+  Jedno miejsce = jedna butelka, więc produktu nie da się postawić więcej razy, niż jest butelek na stanie
+  (licząc wszystkie półki). Gdy stan spadnie (szkolenie, wyrzucenie), nadmiarowe miejsca są czerwone
+  i można je opróżnić jednym przyciskiem.
 - **Podgląd** — półka „jak w rzeczywistości”: deski i zdjęcia butelek w miejscach; opcjonalnie stany na
   tej półce (wg partii), otwarte butelki i terminy oraz podpisy.
 
