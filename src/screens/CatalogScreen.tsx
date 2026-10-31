@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { money } from '../lib/money';
 import { Link, useNavigate } from 'react-router-dom';
 import { CategoryChips, type CatFilter } from '../components/CategoryChips';
 import { Icon } from '../components/Icon';
@@ -189,6 +190,7 @@ function CatalogRow({ item, have, checked, onToggle }: { item: CatalogItem; have
           <span className="catalog__name">{item.name}</span>
           <span className="code">
             {item.code} · {item.size}
+            {item.price ? ` · ${money(item.price)} netto` : ''}
           </span>
           {have && (
             <span className="badge is-ok" style={{ alignSelf: 'flex-start', marginTop: 4 }}>

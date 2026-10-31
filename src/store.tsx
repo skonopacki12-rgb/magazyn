@@ -49,11 +49,17 @@ export interface Receipt {
 
 const LOG_LIMIT = 300;
 
-export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & { packSize?: number; volume?: number; volumeUnit?: 'ml' | 'g' };
+export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & {
+  packSize?: number;
+  volume?: number;
+  volumeUnit?: 'ml' | 'g';
+  price?: number;
+};
 
 type Action =
   | { type: 'add'; id: string; draft: ProductDraft }
   | { type: 'addMany'; products: Product[] }
+  | { type: 'setPrices'; prices: Record<string, number> }
   | { type: 'update'; id: string; patch: Partial<ProductDraft> }
   | { type: 'archive'; id: string }
   | { type: 'setCount'; id: string; value: string }
@@ -93,6 +99,8 @@ function reducer(state: State, action: Action): State {
       if (action.mode === 'products')
         return { ...state, products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {}, training: null, pending: [], orderDraft: {} };
       return { ...state, products: state.products.map((p) => ({ ...p, qty: 0, lots: [] })), counts: {}, ordered: {}, countLots: {}, training: null };
+    case 'setPrices':
+      return { ...state, products: state.products.map((p) => (action.prices[p.id] != null ? { ...p, price: action.prices[p.id] } : p)) };
     case 'addMany':
       return { ...state, products: [...state.products, ...action.products] };
     case 'add':
@@ -258,6 +266,8 @@ interface Store {
   shelfAudit: (shelf: string) => ShelfAudit;
   /** Replaces the whole warehouse with a backup (saved to the cloud like any change). */
   restore: (data: State) => void;
+  /** Fills in missing prices of products added from the folders. */
+  fillCatalogPrices: (items: CatalogItem[]) => void;
   adjustShelf: (adjust: Adjust) => void;
   checkOnShelf: (shelf: string, productId: string) => void;
   finishShelf: (shelf: string, finished: boolean) => void;
@@ -404,6 +414,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
             image: it.image ?? undefined,
             catalogId: it.id,
             packSize: it.packSize,
+            price: it.price ?? undefined,
             volume: parseSize(it.size)?.value,
             volumeUnit: parseSize(it.size)?.unit,
           });
@@ -432,6 +443,15 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       deleteShelf: (id) => dispatch({ type: 'deleteShelf', id }),
       shelfAudit: (shelf) => auditFor(state, shelf, todayIso()),
       restore: (data) => dispatch({ type: 'replace', state: data }),
+      fillCatalogPrices: (items) => {
+        const byId = new Map(items.map((i) => [i.id, i.price]));
+        const prices: Record<string, number> = {};
+        for (const p of state.products) {
+          const price = p.catalogId ? byId.get(p.catalogId) : undefined;
+          if (p.price == null && price != null) prices[p.id] = price;
+        }
+        if (Object.keys(prices).length) dispatch({ type: 'setPrices', prices });
+      },
       adjustShelf: (adjust) => dispatch({ type: 'shelfAdjust', adjust, at: new Date().toISOString(), date: todayIso() }),
       checkOnShelf: (shelf, productId) => dispatch({ type: 'shelfCheck', shelf, productId, date: todayIso() }),
       finishShelf: (shelf, finished) => dispatch({ type: 'shelfFinish', shelf, date: todayIso(), finished }),

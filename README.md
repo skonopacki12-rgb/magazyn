@@ -83,6 +83,10 @@ Można szukać, filtrować po marce i kategorii, zaznaczyć wiele naraz, ustawi�
 (szt., op., ml, kg). Dodane produkty mają stan „Niepoliczony”, dopóki nie przejdą inwentaryzacji,
 więc nie trafiają od razu na listę „Do zamówienia”. Produktów już dodanych nie da się dodać drugi raz.
 
+**Ceny netto** pochodzą z folderów (1883: cena bazowa z cennika; Lord of Taste: aktualna cena z folderu)
+i są w polu „Cena netto” produktu. Produkty dodane wcześniej dostają cenę automatycznie. Aplikacja pokazuje
+wartość magazynu (lista stanów, eksport CSV) i przybliżoną wartość zamówienia.
+
 Dane i zdjęcia: `public/katalog/` (zdjęcia wycięte z PDF, `.webp`). Jak odświeżyć z nowych folderów:
 `tools/katalog/README.md`.
 

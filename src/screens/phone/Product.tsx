@@ -1,4 +1,5 @@
 import { volumeOf } from '../../lib/volume';
+import { money } from '../../lib/money';
 import { packSizeOf } from '../../lib/pack';
 import { useEffect, useState } from 'react';
 import { IncomingNote } from '../../components/Incoming';
@@ -31,6 +32,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
           packSize: packSizeOf(stored) ? String(packSizeOf(stored)) : '',
           volume: volumeOf(stored) ? String(volumeOf(stored)!.value) : '',
           volumeUnit: volumeOf(stored)?.unit,
+          price: stored.price != null ? String(stored.price).replace('.', ',') : '',
         }
       : emptyDraft({ name: params.get('nazwa') ?? '' }),
   );
@@ -93,6 +95,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
             {preview?.brand && (
               <span className="subtitle">
                 {preview.brand} · {preview.size}
+                {preview.price ? ` · ${money(preview.price)} netto` : ''}
               </span>
             )}
           </div>

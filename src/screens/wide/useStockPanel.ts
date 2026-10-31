@@ -77,7 +77,7 @@ export function useStockPanel(defaultPanel: 'order' | 'product', init: StockPane
       if (!sel) return;
       setEditId(sel.id);
       setErr(false);
-      setDraftRaw({ name: sel.name, code: sel.code, cat: sel.cat, unit: sel.unit, min: String(sel.min), packSize: packSizeOf(sel) ? String(packSizeOf(sel)) : '', volume: volumeOf(sel) ? String(volumeOf(sel)!.value) : '', volumeUnit: volumeOf(sel)?.unit });
+      setDraftRaw({ name: sel.name, code: sel.code, cat: sel.cat, unit: sel.unit, min: String(sel.min), packSize: packSizeOf(sel) ? String(packSizeOf(sel)) : '', volume: volumeOf(sel) ? String(volumeOf(sel)!.value) : '', volumeUnit: volumeOf(sel)?.unit, price: sel.price != null ? String(sel.price).replace('.', ',') : '' });
       setPanel('form');
     },
     cancel: () => {

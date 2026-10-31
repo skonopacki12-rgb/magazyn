@@ -1,4 +1,5 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { money, stockValue } from '../../lib/money';
 import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
@@ -44,6 +45,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                 <h1 className="title-md">Stany magazynowe</h1>
                 <p className="subtitle subtitle--lg">
                   {countProducts(m.all.length)} · {needs.length} do zamówienia · stan z inwentaryzacji {formatDate(state.lastCount)}
+                  {stockValue(m.all).value > 0 ? ` · wartość ${money(stockValue(m.all).value)} netto` : ''}
                 </p>
               </div>
               <SearchField

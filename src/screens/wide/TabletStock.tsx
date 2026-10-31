@@ -1,4 +1,5 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { money, stockValue } from '../../lib/money';
 import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
@@ -68,7 +69,10 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
             )}
             <div className="heading-row">
               <h2 className="eyebrow">{m.hasQuery ? countResults(n) : countProducts(n)}</h2>
-              <span className="hint">stan z {formatDate(state.lastCount)}</span>
+              <span className="hint">
+                stan z {formatDate(state.lastCount)}
+                {stockValue(m.all).value > 0 ? ` · ${money(stockValue(m.all).value)}` : ''}
+              </span>
             </div>
             {n > 0 && (
               <ul className="rows">

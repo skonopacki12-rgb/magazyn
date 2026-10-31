@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { money } from '../lib/money';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useOrderDraft, type OrderLine } from '../components/Orders';
@@ -144,7 +145,10 @@ function DraftTab({ m, placed, onShowPending }: { m: ReturnType<typeof useOrderD
       {m.chosen.length > 0 && (
         <section className="stack-4" style={{ gap: 8 }}>
           <div className="heading-row">
-            <h2 className="eyebrow">Kody do zamówienia</h2>
+            <h2 className="eyebrow">
+              Kody do zamówienia
+              {m.chosen.some((l) => l.p.price) ? ` · ≈ ${money(m.chosen.reduce((s, l) => s + (l.p.price ?? 0) * l.qty, 0))} netto` : ''}
+            </h2>
             <span className="hint">kod ⇥ ilość — wklej do maila lub arkusza</span>
           </div>
           <pre className="codes" aria-label="Lista kodów i ilości">
@@ -175,6 +179,7 @@ function DraftRow({ l, m }: { l: OrderLine; m: ReturnType<typeof useOrderDraft> 
         <span className="code">
           {p.code} · masz {p.qty} / min {p.min}
           {p.incoming ? ` · w drodze ${p.incoming}` : ''}
+          {p.price ? ` · ${money(p.price)}` : ''}
         </span>
       </label>
       <div className="draft__qty">

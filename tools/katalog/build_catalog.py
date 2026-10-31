@@ -2,10 +2,12 @@ import re, json, shutil, os, sys
 OUT = sys.argv[1]
 os.makedirs(f'{OUT}/img', exist_ok=True)
 imap = json.load(open('imgs/map.json'))
+# Lord of Taste prices (current netto, read next to each code by prices.py)
+lot_prices = json.load(open('lot_prices.json')) if os.path.exists('lot_prices.json') else {}
 items = []
 
-def add(id, code, name, brand, cat, size, img_key, source):
-    items.append({'id': id, 'code': code, 'name': name, 'brand': brand, 'cat': cat, 'size': size,
+def add(id, code, name, brand, cat, size, img_key, source, price=None):
+    items.append({'id': id, 'code': code, 'name': name, 'brand': brand, 'cat': cat, 'size': size, 'price': price,
                   'image': f'/katalog/img/{id}.webp' if img_key in imap else None, '_img': img_key, 'source': source})
 
 # ---------- 1883 (price list pages 2–3) ----------
@@ -16,7 +18,7 @@ sections = {
     'Sosy Routin 1883 0,5L': ('sosy', '0,5 l'), 'Sosy Routin 1883 1,89L': ('sosy', '1,89 l'),
     'ARTONIC': ('napoje', None), 'Pompki Routin 1883': ('akcesoria', None),
 }
-row = re.compile(r'^\s*(\S+)\s+(.+?)\s{2,}\d+,\d{2}')
+row = re.compile(r'^\s*(\S+)\s+(.+?)\s{2,}(\d+,\d{2})')
 for line in open('folders/1883.txt', encoding='utf-8'):
     m = re.search(r'CENNIK (.+?)\s*$', line)
     if m: SECTION = m.group(1).strip(); continue
@@ -49,12 +51,12 @@ for line in open('folders/1883.txt', encoding='utf-8'):
         fits = 'butelka szklana 1 l' if 'szklanej' in raw else 'butelka PET 1 l'
         name = f'Pompka 1883 {what} {size} ({fits})'
     name = re.sub(r'\s+', ' ', name)
-    add(code, code, name, 'Artonic' if code.startswith('ART') else '1883 Maison Routin', cat, size, code, '1883 — cennik 03/2026')
+    add(code, code, name, 'Artonic' if code.startswith('ART') else '1883 Maison Routin', cat, size, code, '1883 — cennik 03/2026', float(r.group(3).replace(',', '.')))
 
 # ---------- Lord of Taste (folder 10/2026) ----------
 LOT = 'Lord of Taste'
 def lot(code, name, cat, size, id=None, img=None):
-    add(id or code, code, name, LOT, cat, size, img or code, 'Lord of Taste — folder 10/2026')
+    add(id or code, code, name, LOT, cat, size, img or code, 'Lord of Taste — folder 10/2026', lot_prices.get(img or code))
 for code, n in [('LOTPURPAS','Marakuja'),('LOTPURMAN','Mango'),('LOTPURPLM','Śliwka'),('LOTPURAPL','Jabłko'),('LOTPURBAN','Banan'),
                 ('LOTPURPEA','Gruszka'),('LOTPURRCU','Czerwona porzeczka'),('LOTPURRAS','Malina'),('LOTPURCUR','Czarna porzeczka'),
                 ('LOTPURCHR','Wiśnia'),('LOTPURSTR','Truskawka'),('LOTPURPEC','Brzoskwinia'),('LOTPURLEM','Cytryna'),

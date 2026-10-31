@@ -3,7 +3,7 @@ import type { Category, Unit } from '../lib/types';
 import type { ProductDraft } from '../store';
 import { MIN_LABELS, Stepper } from './Stepper';
 
-export type Draft = Omit<ProductDraft, 'min' | 'packSize' | 'volume'> & { min: string; packSize?: string; volume?: string };
+export type Draft = Omit<ProductDraft, 'min' | 'packSize' | 'volume' | 'price'> & { min: string; packSize?: string; volume?: string; price?: string };
 
 export function emptyDraft(partial?: Partial<Draft>): Draft {
   return { name: '', code: '', cat: 'syropy', unit: 'szt.', min: '2', ...partial };
@@ -12,6 +12,7 @@ export function emptyDraft(partial?: Partial<Draft>): Draft {
 export function draftToProduct(d: Draft): ProductDraft {
   const pack = Number(d.packSize) || 0;
   const vol = Number(d.volume) || 0;
+  const price = Number(String(d.price ?? '').replace(',', '.'));
   return {
     ...d,
     name: d.name.trim(),
@@ -20,6 +21,7 @@ export function draftToProduct(d: Draft): ProductDraft {
     packSize: pack > 1 ? pack : undefined,
     volume: vol > 0 ? vol : undefined,
     volumeUnit: vol > 0 ? (d.volumeUnit ?? 'ml') : undefined,
+    price: price > 0 ? Math.round(price * 100) / 100 : undefined,
   };
 }
 
@@ -144,6 +146,27 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
     </div>
   );
 
+  const priceField = (
+    <div className="field">
+      <label htmlFor={id('price')} className="field__label">
+        Cena netto
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          id={id('price')}
+          className="input input--mono"
+          style={{ width: 120 }}
+          type="text"
+          inputMode="decimal"
+          placeholder="np. 58,71"
+          value={draft.price ?? ''}
+          onChange={(e) => set('price', e.target.value.replace(/[^0-9,.]/g, ''))}
+        />
+        <span className="stepper__unit">zł za {draft.unit === 'ml' ? 'butelkę' : draft.unit}</span>
+      </div>
+    </div>
+  );
+
   const pack = (
     <div className="field">
       <label htmlFor={id('pack')} className="field__label">
@@ -176,6 +199,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
           {unit}
           {min}
           {volume}
+          {priceField}
           {pack}
         </div>
       </>
@@ -191,6 +215,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
       </div>
       {min}
       {volume}
+      {priceField}
       {pack}
     </>
   );

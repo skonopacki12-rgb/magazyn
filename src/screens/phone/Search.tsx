@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { money, stockValue } from '../../lib/money';
 import { Link } from 'react-router-dom';
 import { AccountMenu } from '../../components/Account';
 import { CategoryChips, chipLabel, type CatFilter } from '../../components/CategoryChips';
@@ -14,7 +15,8 @@ import { countProducts, countResults, formatDate, plural } from '../../lib/text'
 import { useStore } from '../../store';
 
 export function PhoneSearch() {
-  const { state, needs } = useStore();
+  const { state, needs, products } = useStore();
+  const worth = stockValue(products);
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState<CatFilter>('all');
   const { matched, results, hasQuery } = useStockSearch(query, cat);
@@ -30,7 +32,10 @@ export function PhoneSearch() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div className="stack-2">
             <h1 className="title-xl">Magazyn</h1>
-            <p className="subtitle">Stan z inwentaryzacji: {formatDate(state.lastCount)}</p>
+            <p className="subtitle">
+              Stan z inwentaryzacji: {formatDate(state.lastCount)}
+              {worth.value > 0 ? ` · ${money(worth.value)} netto` : ''}
+            </p>
           </div>
           <div style={{ flex: 'none', display: 'flex', gap: 8 }}>
             <Link to="/produkt/nowy" aria-label="Dodaj produkt" className="icon-btn icon-btn--boxed">

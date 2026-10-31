@@ -50,6 +50,8 @@ export interface Product {
   /** Content of one full bottle / pack, e.g. 700 (ml) or 1000 (g). */
   volume?: number;
   volumeUnit?: 'ml' | 'g';
+  /** Netto price of one unit / bottle / pack (zł). */
+  price?: number;
 }
 
 /** One row of a shelf; each slot holds one product (bottle) or is empty. */
@@ -96,6 +98,8 @@ export interface CatalogItem {
   source: string;
   /** Units per case, when the folder states it. */
   packSize?: number;
+  /** Netto price from the folder (zł). */
+  price?: number | null;
 }
 
 export interface StockStatus {

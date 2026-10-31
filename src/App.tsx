@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { CatalogPriceSync } from './components/CatalogPriceSync';
 import { SyncNotice } from './components/Account';
 import { ShelfOptions } from './components/Lots';
 import { allShelves } from './lib/fifo';
@@ -66,6 +67,7 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <SyncNotice />
+      <CatalogPriceSync />
       <ShelfOptions shelves={shelves} />
     </>
   );
