@@ -187,6 +187,7 @@ Każda partia ma pole **Półka** (np. A2) — wpisujesz je w inwentaryzacji; ap
 2. Aplikacja układa listę do zebrania **według półek** i dla każdego produktu podsuwa partię FIFO:
    najpierw otwartą, potem z najkrótszą datą (przeterminowane na końcu). Można wybrać inną partię.
    Nieznane kody i produkty bez stanu są wypisane osobno. Sesja zapisuje się w chmurze.
+   Zamiast wklejać kody można wybrać półkę i **klikać butelki na jej podglądzie** — każde kliknięcie dodaje kod.
 3. **Koniec szkolenia** — dla każdej pozycji: *Odłóż* (na półkę, z której wzięto, albo inną; zejście —
    ile zużyto; zaznaczenie „otwarta”), *Zużyte do końca*, *Wyrzuć — zepsute* albo *Inne* (z powodem).
 4. **Zatwierdź** aktualizuje stany i partie, a ruchy trafiają do dziennika „Ostatnie ruchy”.

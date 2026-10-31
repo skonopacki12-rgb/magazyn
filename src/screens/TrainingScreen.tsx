@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ShelfPreview } from '../components/Shelf';
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { expiryText, openedText } from '../components/Lots';
@@ -120,8 +121,11 @@ function Steps({ stage }: { stage: Training['stage'] }) {
 }
 
 function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[] | null }) {
-  const { state } = useStore();
+  const { state, shelves, byId } = useStore();
   const [text, setText] = useState('');
+  const [shelfId, setShelfId] = useState<string | null>(null);
+  const shelf = shelves.find((s) => s.id === shelfId) ?? null;
+  const addCode = (code: string) => setText((t) => (t.trim() ? `${t.replace(/\s+$/, '')}\n${code}` : code));
   const codes = parseCodes(text);
   const log = state.log ?? [];
   return (
@@ -150,6 +154,33 @@ function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[
         <p className="hint">
           Każdy kod w nowej linii albo po przecinku/spacji. Ten sam kod wpisany 2× = 2 sztuki. Produkty liczone w ml/kg: jeden kod = jedna butelka.
         </p>
+        {shelves.length > 0 && (
+          <div className="stack-4" style={{ gap: 8 }}>
+            <span className="field__label">…albo klikaj butelki na półce</span>
+            <div className="chips chips--wrap chips--sm">
+              {shelves.map((s) => (
+                <button key={s.id} type="button" className="chip" aria-pressed={shelfId === s.id} onClick={() => setShelfId(shelfId === s.id ? null : s.id)}>
+                  {s.name}
+                </button>
+              ))}
+            </div>
+            {shelf && (
+              <>
+                <ShelfPreview
+                  shelf={shelf}
+                  byId={byId}
+                  captions
+                  onSlot={(r, i) => {
+                    const pid = shelf.rows[r]?.slots[i];
+                    const p = pid ? byId(pid) : undefined;
+                    if (p) addCode(p.code);
+                  }}
+                />
+                <span className="hint">Każde kliknięcie dodaje kod do listy powyżej. Na liście do zebrania i tak dostaniesz butelkę według FIFO.</span>
+              </>
+            )}
+          </div>
+        )}
         <button type="button" className="btn btn--primary btn--lg" disabled={!codes.length} onClick={() => onStart(text)}>
           {codes.length ? `Przygotuj listę (${codes.length} ${plural(codes.length, 'kod', 'kody', 'kodów')})` : 'Wklej kody'}
         </button>
