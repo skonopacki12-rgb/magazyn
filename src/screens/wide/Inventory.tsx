@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
@@ -12,6 +13,16 @@ import { FinishAction, InventoryEmpty } from '../phone/Inventory';
 
 export function TabletInventory() {
   const m = useInventory();
+  const [scanning, setScanning] = useState(false);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const onScan = (p: { id: string; name: string }) => {
+    const it = m.items.find((x) => x.id === p.id);
+    if (!it) return `${p.name} — nie ma go w inwentaryzacji`;
+    m.addBottle(it);
+    setFlashId(p.id);
+    document.getElementById(`row-${p.id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return `${p.name}: +1 pełna butelka`;
+  };
   const visible = m.filter === 'todo' ? m.items.filter((p) => m.todoIds.includes(p.id)) : m.items;
   const groups = groupByCategory(m.items, visible);
   const todoDone = m.filter === 'todo' && visible.every((p) => p.counted);
@@ -19,6 +30,7 @@ export function TabletInventory() {
   return (
     <div className="wide">
       <TopBar variant="tablet" />
+      <ScanDialog open={scanning} continuous title="Skanuj butelki" onClose={() => setScanning(false)} onProduct={onScan} />
       <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 16, padding: '22px 24px 14px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
           <div className="stack-2">
@@ -33,6 +45,7 @@ export function TabletInventory() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <Segmented m={m} />
+          <ScanButton onClick={() => setScanning(true)} label="Skanuj butelki" />
           <Link to="/inwentaryzacja/polki" className="btn btn--ghost btn--r12">
             <Icon name="shelf" size={18} />
             Po półkach
@@ -54,7 +67,12 @@ export function TabletInventory() {
             </div>
             <ul className="inv-grid">
               {g.items.map((p) => (
-                <li key={p.id} className={`inv-card${p.counted ? ' is-filled' : ''}`} style={m.isExpanded(p) ? { gridColumn: '1 / -1' } : undefined}>
+                <li
+                  key={p.id}
+                  id={`row-${p.id}`}
+                  className={`${flashId === p.id ? 'flash ' : ''}inv-card${p.counted ? ' is-filled' : ''}`}
+                  style={m.isExpanded(p) ? { gridColumn: '1 / -1' } : undefined}
+                >
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {p.image && <Thumb src={p.image} size="sm" />}
                     <div className="stack-2">
@@ -156,6 +174,16 @@ export function TabletInventory() {
 
 export function LaptopInventory() {
   const m = useInventory();
+  const [scanning, setScanning] = useState(false);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const onScan = (p: { id: string; name: string }) => {
+    const it = m.items.find((x) => x.id === p.id);
+    if (!it) return `${p.name} — nie ma go w inwentaryzacji`;
+    m.addBottle(it);
+    setFlashId(p.id);
+    document.getElementById(`row-${p.id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return `${p.name}: +1 pełna butelka`;
+  };
   const [query, setQuery] = useState('');
   const tokens = tokenize(query);
   const visible = m.items.filter((p) => (m.filter !== 'todo' || m.todoIds.includes(p.id)) && matches(tokens, p.name, p.code));
@@ -164,6 +192,7 @@ export function LaptopInventory() {
   return (
     <div className="wide">
       <TopBar variant="laptop" />
+      <ScanDialog open={scanning} continuous title="Skanuj butelki" onClose={() => setScanning(false)} onProduct={onScan} />
       <div className="scroll">
         <div className="page page--narrow" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px 32px' }}>
@@ -182,6 +211,7 @@ export function LaptopInventory() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px' }}>
             <Segmented m={m} small />
+            <ScanButton onClick={() => setScanning(true)} label="Skanuj butelki" />
             <Link to="/inwentaryzacja/polki" className="btn btn--ghost">
               <Icon name="shelf" size={18} />
               Po półkach
@@ -220,7 +250,7 @@ export function LaptopInventory() {
                   </div>
                   <ul>
                     {g.items.map((p) => (
-                      <li key={p.id} className="inv-line">
+                      <li key={p.id} id={`row-${p.id}`} className={`inv-line${flashId === p.id ? ' flash' : ''}`}>
                         <div className="trow trow--inv">
                           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             {p.image && <Thumb src={p.image} size="xs" />}

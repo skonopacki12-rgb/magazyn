@@ -87,8 +87,7 @@ export function useInventory() {
         const lots = cloneLots(p.prevLots);
         const rest = p.prev - lots.reduce((s, l) => s + l.qty, 0);
         setLots(p.id, rest > 0 ? [...lots, newLot({ qty: rest })] : lots);
-      }
-      else setCount(p.id, String(p.prev));
+      } else setCount(p.id, String(p.prev));
     },
     setLots: (p: InvItem, lots: Lot[]) => {
       if (snapshot) setSnapshot(null);

@@ -133,6 +133,17 @@ W inwentaryzacji przy każdym produkcie są przyciski:
 - **+ Otwarta butelka** — dodaje otwartą butelkę (data otwarcia: dziś). Przy liczeniu w ml pyta, ile zostało:
   ¾, ½, ¼ pojemności albo wpisane ml; przy sztukach dodaje 1 otwartą.
 
+## Skanowanie kodów
+
+Aparat telefonu/tabletu czyta kody kreskowe (EAN) i kody produktów (biblioteka ZXing — działa też w Safari
+na iPhonie/iPadzie; ładuje się dopiero po otwarciu skanera). Kod można też wpisać ręcznie.
+- **Nieznany kod** → wybierasz produkt, kod zapisuje się w polu „Kod kreskowy (EAN)” i następnym razem rozpozna się sam.
+- **Wyszukiwanie** (ikona obok „+” / obok pola szukania) — otwiera zeskanowany produkt.
+- **Inwentaryzacja** — „Skanuj butelki”: każdy skan = +1 pełna butelka. Ta sama butelka liczy się raz,
+  dopóki nie zniknie z kadru (przesuń na następną).
+- **Szkolenie** — skan dodaje kod do listy; **liczenie półki** — skan = +1 na tej półce.
+- Formularz produktu — pole EAN z przyciskiem skanowania.
+
 ## Inwentaryzacja po półkach
 
 `/inwentaryzacja/polki` (przycisk „Po półkach” w inwentaryzacji, „Policz tę półkę” w układzie półki):

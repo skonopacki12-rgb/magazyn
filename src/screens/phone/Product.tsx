@@ -33,6 +33,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
           volume: volumeOf(stored) ? String(volumeOf(stored)!.value) : '',
           volumeUnit: volumeOf(stored)?.unit,
           price: stored.price != null ? String(stored.price).replace('.', ',') : '',
+          ean: stored.ean ?? '',
         }
       : emptyDraft({ name: params.get('nazwa') ?? '' }),
   );

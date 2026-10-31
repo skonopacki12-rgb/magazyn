@@ -1,4 +1,6 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { useState } from 'react';
+import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { money, stockValue } from '../../lib/money';
 import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
@@ -21,12 +23,14 @@ import { useStockPanel, type StockPanelInit } from './useStockPanel';
 export function TabletStock({ init }: { init?: StockPanelInit }) {
   const { state, needs } = useStore();
   const m = useStockPanel('product', init);
+  const [scanning, setScanning] = useState(false);
   const outN = needs.filter((p) => p.isOut).length;
   const n = m.results.length;
   const emptyKind = !m.all.length ? 'empty' : !m.hasQuery ? 'pick' : m.matched.length ? 'cat' : 'none';
 
   return (
     <div className="wide">
+      <ScanDialog open={scanning} title="Skanuj produkt" onClose={() => setScanning(false)} onProduct={(p) => m.pick(p.id)} />
       <TopBar variant="tablet">
         <span className="spacer" />
         <Link to="/katalog" className="btn btn--ghost btn--r12">
@@ -40,13 +44,17 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
       <div className="md">
         <section aria-label="Lista produktów" className="md__list">
           <div className="md__list-head">
-            <SearchField
-              id="t-szukaj"
-              value={m.query}
-              onChange={m.setQuery}
-              placeholder="Nazwa lub kod, np. kokos"
-              label="Szukaj produktu po nazwie lub kodzie"
-            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <SearchField
+                id="t-szukaj"
+                value={m.query}
+                onChange={m.setQuery}
+                placeholder="Nazwa lub kod, np. kokos"
+                label="Szukaj produktu po nazwie lub kodzie"
+                style={{ flex: 1 }}
+              />
+              <ScanButton compact onClick={() => setScanning(true)} label="Skanuj kod produktu" />
+            </div>
             <CategoryChips value={m.cat} onChange={m.setCat} matched={m.matched} layout="scroll" />
           </div>
           <div className="md__list-body">

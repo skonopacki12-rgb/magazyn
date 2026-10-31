@@ -33,6 +33,12 @@ const PATHS = {
       <path d="M8 9V6M11 9V5.5M15 15v-3.5M17.5 15v-3" />
     </>
   ),
+  scan: (
+    <>
+      <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+      <path d="M8 8v8M11 8v8M14 8v8M17 8v8" />
+    </>
+  ),
   truck: (
     <>
       <path d="M3 6h11v10H3zM14 9h4l3 3v4h-7" />

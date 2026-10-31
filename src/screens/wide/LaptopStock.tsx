@@ -1,4 +1,6 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { useState } from 'react';
+import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { money, stockValue } from '../../lib/money';
 import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
@@ -21,12 +23,14 @@ import { useStockPanel, type StockPanelInit } from './useStockPanel';
 export function LaptopStock({ init }: { init?: StockPanelInit }) {
   const { state, needs } = useStore();
   const m = useStockPanel('order', init);
+  const [scanning, setScanning] = useState(false);
   const n = m.results.length;
   const emptyKind = !m.all.length ? 'empty' : m.matched.length ? 'cat' : 'none';
   const showOrder = m.panel === 'order' || (m.panel === 'product' && !m.sel);
 
   return (
     <div className="wide">
+      <ScanDialog open={scanning} title="Skanuj produkt" onClose={() => setScanning(false)} onProduct={(p) => m.pick(p.id)} />
       <TopBar variant="laptop">
         <span className="spacer" />
         <Link to="/katalog" className="btn btn--ghost">
@@ -48,15 +52,18 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                   {stockValue(m.all).value > 0 ? ` · wartość ${money(stockValue(m.all).value)} netto` : ''}
                 </p>
               </div>
-              <SearchField
-                id="l-szukaj"
-                size="md"
-                value={m.query}
-                onChange={m.setQuery}
-                placeholder="Szukaj po nazwie lub kodzie"
-                label="Szukaj produktu po nazwie lub kodzie"
-                style={{ flex: '0 1 460px', minWidth: 260 }}
-              />
+              <div style={{ display: 'flex', gap: 8, flex: '0 1 520px', minWidth: 300 }}>
+                <SearchField
+                  id="l-szukaj"
+                  size="md"
+                  value={m.query}
+                  onChange={m.setQuery}
+                  placeholder="Szukaj po nazwie lub kodzie"
+                  label="Szukaj produktu po nazwie lub kodzie"
+                  style={{ flex: 1 }}
+                />
+                <ScanButton compact onClick={() => setScanning(true)} label="Skanuj kod produktu" />
+              </div>
             </div>
             <CategoryChips value={m.cat} onChange={m.setCat} matched={m.matched} layout="wrap" longLabels small />
             {!m.hasQuery && <ExpiryBanner />}

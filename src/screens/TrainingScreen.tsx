@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ScanButton, ScanDialog } from '../components/Scanner';
 import { ShelfPreview } from '../components/Shelf';
 import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -124,6 +125,7 @@ function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[
   const { state, shelves, byId } = useStore();
   const [text, setText] = useState('');
   const [shelfId, setShelfId] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
   const shelf = shelves.find((s) => s.id === shelfId) ?? null;
   const addCode = (code: string) => setText((t) => (t.trim() ? `${t.replace(/\s+$/, '')}\n${code}` : code));
   const codes = parseCodes(text);
@@ -154,6 +156,19 @@ function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[
         <p className="hint">
           Każdy kod w nowej linii albo po przecinku/spacji. Ten sam kod wpisany 2× = 2 sztuki. Produkty liczone w ml/kg: jeden kod = jedna butelka.
         </p>
+        <div>
+          <ScanButton onClick={() => setScanning(true)} label="Skanuj kody butelek" />
+          <ScanDialog
+            open={scanning}
+            continuous
+            title="Skanuj na szkolenie"
+            onClose={() => setScanning(false)}
+            onProduct={(p) => {
+              addCode(p.code);
+              return `${p.name} dodany do listy`;
+            }}
+          />
+        </div>
         {shelves.length > 0 && (
           <div className="stack-4" style={{ gap: 8 }}>
             <span className="field__label">…albo klikaj butelki na półce</span>

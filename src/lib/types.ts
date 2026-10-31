@@ -52,6 +52,8 @@ export interface Product {
   volumeUnit?: 'ml' | 'g';
   /** Netto price of one unit / bottle / pack (zł). */
   price?: number;
+  /** Barcode (EAN) scanned from the bottle. */
+  ean?: string;
 }
 
 /** One row of a shelf; each slot holds one product (bottle) or is empty. */

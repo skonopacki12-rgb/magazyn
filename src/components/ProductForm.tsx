@@ -1,3 +1,6 @@
+import { ScanDialog } from './Scanner';
+import { Icon } from './Icon';
+import { useState } from 'react';
 import { CATEGORIES, UNITS } from '../lib/catalog';
 import type { Category, Unit } from '../lib/types';
 import type { ProductDraft } from '../store';
@@ -22,6 +25,7 @@ export function draftToProduct(d: Draft): ProductDraft {
     volume: vol > 0 ? vol : undefined,
     volumeUnit: vol > 0 ? (d.volumeUnit ?? 'ml') : undefined,
     price: price > 0 ? Math.round(price * 100) / 100 : undefined,
+    ean: d.ean?.trim() || undefined,
   };
 }
 
@@ -36,6 +40,7 @@ interface Props {
 }
 
 export function ProductFields({ idPrefix, draft, onChange, layout, placeholders = true, minHint }: Props) {
+  const [scanning, setScanning] = useState(false);
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => onChange({ ...draft, [k]: v });
   const id = (s: string) => `${idPrefix}-${s}`;
 
@@ -146,6 +151,30 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
     </div>
   );
 
+  const eanField = (
+    <div className="field">
+      <label htmlFor={id('ean')} className="field__label">
+        Kod kreskowy (EAN)
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          id={id('ean')}
+          className="input input--mono"
+          style={{ flex: '1 1 160px', maxWidth: 220 }}
+          type="text"
+          inputMode="numeric"
+          placeholder="zeskanuj albo wpisz"
+          value={draft.ean ?? ''}
+          onChange={(e) => set('ean', e.target.value.replace(/\s/g, ''))}
+        />
+        <button type="button" className="icon-btn icon-btn--boxed" aria-label="Zeskanuj kod kreskowy" onClick={() => setScanning(true)}>
+          <Icon name="scan" size={20} />
+        </button>
+      </div>
+      <ScanDialog open={scanning} title="Zeskanuj kod z butelki" onClose={() => setScanning(false)} onProduct={() => undefined} onRaw={(t) => set('ean', t)} />
+    </div>
+  );
+
   const priceField = (
     <div className="field">
       <label htmlFor={id('price')} className="field__label">
@@ -201,6 +230,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
           {volume}
           {priceField}
           {pack}
+          {eanField}
         </div>
       </>
     );
@@ -217,6 +247,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
       {volume}
       {priceField}
       {pack}
+      {eanField}
     </>
   );
 }

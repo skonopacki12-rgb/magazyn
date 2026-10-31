@@ -1,4 +1,6 @@
 import { packSizeOf } from '../../lib/pack';
+import { useState } from 'react';
+import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { QuickAdd, CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
@@ -55,6 +57,16 @@ export function FinishAction({ m, size, savedHref, savedLabel }: { m: InventoryM
 
 export function PhoneInventory() {
   const m = useInventory();
+  const [scanning, setScanning] = useState(false);
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const onScan = (p: { id: string; name: string }) => {
+    const it = m.items.find((x) => x.id === p.id);
+    if (!it) return `${p.name} — nie ma go w inwentaryzacji`;
+    m.addBottle(it);
+    setFlashId(p.id);
+    document.getElementById(`row-${p.id}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return `${p.name}: +1 pełna butelka`;
+  };
   const groups = groupByCategory(m.items, m.items);
   return (
     <div className="phone">
@@ -66,6 +78,7 @@ export function PhoneInventory() {
           </p>
         </div>
         <Progress m={m} variant="card" />
+        <ScanButton onClick={() => setScanning(true)} label="Skanuj butelki (+1 za skan)" />
         <Link to="/inwentaryzacja/polki" className="catalog-cta" style={{ padding: '10px 14px' }}>
           <Icon name="shelf" size={20} />
           <span style={{ flex: 1 }}>Inwentaryzacja po półkach</span>
@@ -87,7 +100,7 @@ export function PhoneInventory() {
             </div>
             <ul className="rows">
               {g.items.map((p) => (
-                <li key={p.id} className="inv-row" style={{ flexWrap: 'wrap' }}>
+                <li key={p.id} id={`row-${p.id}`} className={`inv-row${flashId === p.id ? ' flash' : ''}`} style={{ flexWrap: 'wrap' }}>
                   {p.image && <Thumb src={p.image} size="xs" />}
                   <span className="stack-2" style={{ flex: 1 }}>
                     <label htmlFor={`inw-${p.id}`} className="row-name">
@@ -128,6 +141,7 @@ export function PhoneInventory() {
         <FinishAction m={m} size="lg" savedHref="/" savedLabel="Zapisano — nowe stany w wyszukiwarce" />
         <p className="hint hint--center">Postęp zapisuje się na bieżąco — możesz dokończyć później.</p>
       </div>
+      <ScanDialog open={scanning} continuous title="Skanuj butelki" onClose={() => setScanning(false)} onProduct={onScan} />
       <TabBar />
     </div>
   );

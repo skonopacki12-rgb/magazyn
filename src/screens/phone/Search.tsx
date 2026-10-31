@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { money, stockValue } from '../../lib/money';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AccountMenu } from '../../components/Account';
 import { CategoryChips, chipLabel, type CatFilter } from '../../components/CategoryChips';
 import { Icon } from '../../components/Icon';
@@ -18,6 +19,8 @@ export function PhoneSearch() {
   const { state, needs, products } = useStore();
   const worth = stockValue(products);
   const [query, setQuery] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const navigate = useNavigate();
   const [cat, setCat] = useState<CatFilter>('all');
   const { matched, results, hasQuery } = useStockSearch(query, cat);
   const n = results.length;
@@ -41,6 +44,7 @@ export function PhoneSearch() {
             <Link to="/produkt/nowy" aria-label="Dodaj produkt" className="icon-btn icon-btn--boxed">
               <Icon name="plus" size={22} strokeWidth={2} />
             </Link>
+            <ScanButton compact onClick={() => setScanning(true)} label="Skanuj kod produktu" />
             <Link to="/polki" aria-label="Półki" className="icon-btn icon-btn--boxed">
               <Icon name="shelf" size={22} />
             </Link>
@@ -163,6 +167,12 @@ export function PhoneSearch() {
           </div>
         )}
       </main>
+      <ScanDialog
+        open={scanning}
+        title="Skanuj produkt"
+        onClose={() => setScanning(false)}
+        onProduct={(p) => navigate(`/produkt/${encodeURIComponent(p.id)}`)}
+      />
       <TabBar />
     </div>
   );

@@ -2894,3 +2894,39 @@ button.rack__slot:hover {
     line-height: 13pt;
   }
 }
+
+/* ───────── Scanner ───────── */
+.scan {
+  width: min(520px, calc(100% - 16px));
+}
+.scan__view {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #000;
+  aspect-ratio: 4 / 3;
+}
+.scan__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.scan__frame {
+  position: absolute;
+  inset: 22% 10%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.25);
+}
+.flash {
+  animation: flash 1.2s ease-out;
+}
+@keyframes flash {
+  0% {
+    background: var(--accent-soft);
+  }
+  100% {
+    background: transparent;
+  }
+}

@@ -54,6 +54,7 @@ export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min
   volume?: number;
   volumeUnit?: 'ml' | 'g';
   price?: number;
+  ean?: string;
 };
 
 type Action =

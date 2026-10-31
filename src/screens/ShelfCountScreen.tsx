@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ScanButton, ScanDialog } from '../components/Scanner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { ProductPicker, ShelfPreview } from '../components/Shelf';
@@ -97,6 +98,7 @@ export function ShelfCount() {
   const items = shelfContents(products, name, layout);
   const audit = shelfAudit(name);
   const [adding, setAdding] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const names = shelfNames(products, shelves);
   const next = names[names.indexOf(name) + 1];
   const sorted = useMemo(() => [...items].sort((a, b) => (byId(a.productId)?.name ?? '').localeCompare(byId(b.productId)?.name ?? '', 'pl')), [items, byId]);
@@ -211,6 +213,18 @@ export function ShelfCount() {
       </ul>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <ScanButton onClick={() => setScanning(true)} label="Skanuj (+1 na półce)" />
+        <ScanDialog
+          open={scanning}
+          continuous
+          title={`Skanuj butelki na półce ${name}`}
+          onClose={() => setScanning(false)}
+          onProduct={(p) => {
+            const now = shelfContents(products, name, layout).find((i) => i.productId === p.id)?.expected ?? 0;
+            adjustShelf({ shelf: name, productId: p.id, qty: now + bottleQty(p), note: 'zeskanowany na półce' });
+            return `${p.name}: ${now} → ${now + bottleQty(p)} na półce ${name}`;
+          }}
+        />
         <button type="button" className="btn btn--ghost btn--md" onClick={() => setAdding(true)}>
           <Icon name="plus" size={18} />
           Znaleziony produkt na tej półce
