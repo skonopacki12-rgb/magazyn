@@ -1,0 +1,80 @@
+import { Link } from 'react-router-dom';
+import { Icon } from '../../components/Icon';
+import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
+import { TabBar } from '../../components/Shell';
+
+export function FinishAction({ m, size, savedHref, savedLabel }: { m: InventoryModel; size: 'lg' | 'md'; savedHref: string; savedLabel: string }) {
+  const cls = size === 'lg' ? 'btn btn--lg' : 'btn btn--md';
+  if (m.saved)
+    return (
+      <Link to={savedHref} className={`${cls} btn--success`}>
+        <Icon name="check" size={size === 'lg' ? 20 : 18} />
+        {savedLabel}
+      </Link>
+    );
+  if (m.complete)
+    return (
+      <button type="button" className={`${cls} btn--primary`} onClick={m.finish}>
+        Zakończ inwentaryzację
+      </button>
+    );
+  return (
+    <button type="button" className={`${cls} btn--disabled`} disabled>
+      Zostało {m.left} do policzenia
+    </button>
+  );
+}
+
+export function PhoneInventory() {
+  const m = useInventory();
+  const groups = groupByCategory(m.items, m.items);
+  return (
+    <div className="phone">
+      <header className="phone__header">
+        <div className="stack-2">
+          <h1 className="title-xl">Inwentaryzacja</h1>
+          <p className="subtitle">
+            {m.today} · poprzednia {m.previous}
+          </p>
+        </div>
+        <Progress m={m} variant="card" />
+      </header>
+      <main className="phone__main phone__main--loose">
+        <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
+          Wpisz, ile sztuk leży na półce. „Bez zmian” przepisuje poprzedni stan.
+        </p>
+        {groups.map((g) => (
+          <section key={g.id} className="stack-4" style={{ gap: 8 }}>
+            <div className="heading-row">
+              <h2 className="eyebrow">{g.label}</h2>
+              <span className="code">
+                {g.counted}/{g.size}
+              </span>
+            </div>
+            <ul className="rows">
+              {g.items.map((p) => (
+                <li key={p.id} className="inv-row">
+                  <span className="stack-2" style={{ flex: 1 }}>
+                    <label htmlFor={`inw-${p.id}`} className="row-name">
+                      {p.name}
+                    </label>
+                    <span className="code">
+                      {p.code} · poprz. {p.prev}
+                    </span>
+                  </span>
+                  <SameButton p={p} onClick={() => m.same(p)} />
+                  <CountInput id={`inw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </main>
+      <div className="phone__footer">
+        <FinishAction m={m} size="lg" savedHref="/" savedLabel="Zapisano — nowe stany w wyszukiwarce" />
+        <p className="hint hint--center">Postęp zapisuje się na bieżąco — możesz dokończyć później.</p>
+      </div>
+      <TabBar />
+    </div>
+  );
+}

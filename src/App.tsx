@@ -1,0 +1,52 @@
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { SyncNotice } from './components/Account';
+import { useBreakpoint } from './lib/useBreakpoint';
+import { PhoneInventory } from './screens/phone/Inventory';
+import { PhoneOrders } from './screens/phone/Orders';
+import { PhoneProduct } from './screens/phone/Product';
+import { PhoneSearch } from './screens/phone/Search';
+import { LaptopInventory, TabletInventory } from './screens/wide/Inventory';
+import { LaptopStock } from './screens/wide/LaptopStock';
+import { TabletStock } from './screens/wide/TabletStock';
+import type { StockPanelInit } from './screens/wide/useStockPanel';
+
+/** On tablet/laptop, orders and product pages live inside the stock screen's side panel. */
+function WideStock({ init }: { init?: StockPanelInit }) {
+  const bp = useBreakpoint();
+  const { key } = useLocation();
+  const Screen = bp === 'laptop' ? LaptopStock : TabletStock;
+  return <Screen key={key} init={init} />;
+}
+
+function ProductRoute() {
+  const bp = useBreakpoint();
+  const { id } = useParams();
+  if (bp === 'phone') return <PhoneProduct key={id} />;
+  return <WideStock init={{ panel: 'product', selected: id }} />;
+}
+
+function NewProductRoute() {
+  const bp = useBreakpoint();
+  const { search } = useLocation();
+  if (bp === 'phone') return <PhoneProduct isNew />;
+  return <WideStock init={{ panel: 'form', newName: new URLSearchParams(search).get('nazwa') ?? '' }} />;
+}
+
+export function App() {
+  const bp = useBreakpoint();
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={bp === 'phone' ? <PhoneSearch /> : <WideStock />} />
+        <Route path="/zamowienia" element={bp === 'phone' ? <PhoneOrders /> : <WideStock init={{ panel: 'order' }} />} />
+        <Route path="/inwentaryzacja" element={bp === 'phone' ? <PhoneInventory /> : bp === 'tablet' ? <TabletInventory /> : <LaptopInventory />} />
+        <Route path="/produkt/nowy" element={<NewProductRoute />} />
+        <Route path="/produkt/:id" element={<ProductRoute />} />
+        <Route path="/logowanie" element={<Navigate to="/" replace />} />
+        <Route path="/rejestracja" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <SyncNotice />
+    </>
+  );
+}
