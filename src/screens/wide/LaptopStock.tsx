@@ -17,7 +17,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
   const m = useStockPanel('order', init);
   const orders = useOrders();
   const n = m.results.length;
-  const emptyKind = m.matched.length ? 'cat' : 'none';
+  const emptyKind = !m.all.length ? 'empty' : m.matched.length ? 'cat' : 'none';
   const showOrder = m.panel === 'order' || (m.panel === 'product' && !m.sel);
 
   return (
@@ -104,12 +104,20 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
             ) : (
               <div className="card card--dashed empty" style={{ padding: '28px 24px' }}>
                 <h2 style={{ fontSize: 22, lineHeight: '28px', fontWeight: 700 }}>
-                  {emptyKind === 'cat' ? `Nic w kategorii „${chipLabel(m.cat, true)}”` : `Nie ma „${m.query.trim()}” w bazie`}
+                  {emptyKind === 'empty'
+                    ? 'Magazyn jest pusty'
+                    : emptyKind === 'cat'
+                      ? `Nic w kategorii „${chipLabel(m.cat, true)}”`
+                      : `Nie ma „${m.query.trim()}” w bazie`}
                 </h2>
                 <p className="empty__text">
-                  {emptyKind === 'cat' ? 'Pasujące produkty są w innych kategoriach.' : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
+                  {emptyKind === 'empty'
+                    ? 'Dodaj pierwszy produkt — pojawi się w następnej inwentaryzacji.'
+                    : emptyKind === 'cat'
+                      ? 'Pasujące produkty są w innych kategoriach.'
+                      : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
                 </p>
-                {emptyKind === 'none' ? (
+                {emptyKind !== 'cat' ? (
                   <button type="button" className="btn btn--primary btn--md" onClick={m.openNew}>
                     <Icon name="plus" size={18} />
                     Dodaj produkt
@@ -135,13 +143,15 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                 {orders.total ? (
                   <OrderGroups m={orders} variant="aside" headingLevel="h3" />
                 ) : (
-                  <p className="empty__text" style={{ padding: '16px 20px 0' }}>
-                    Wszystkie produkty są powyżej minimum.
+                  <p className="empty__text" style={{ padding: '16px 20px 18px' }}>
+                    {m.all.length ? 'Wszystkie produkty są powyżej minimum.' : 'Nic do zamówienia.'}
                   </p>
                 )}
-                <div style={{ padding: '14px 20px 18px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
-                  <CopyButton m={orders} className="btn btn--primary btn--md btn--block" short />
-                </div>
+                {orders.total > 0 && (
+                  <div style={{ padding: '14px 20px 18px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
+                    <CopyButton m={orders} className="btn btn--primary btn--md btn--block" short />
+                  </div>
+                )}
               </div>
             )}
 
@@ -177,7 +187,11 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                     p={m.sel}
                     variant="compact"
                     headingLevel="h3"
-                    emptyText={<p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>Nie był jeszcze liczony — stan pojawi się po najbliższej inwentaryzacji.</p>}
+                    emptyText={
+                      <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
+                        Nie był jeszcze liczony — stan pojawi się po najbliższej inwentaryzacji.
+                      </p>
+                    }
                   />
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     <button type="button" className="btn btn--outline" style={{ fontSize: 14 }} onClick={m.openEdit}>

@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth';
 import { useStore } from '../store';
 import { Icon } from './Icon';
+import { ResetDialog } from './ResetDialog';
 
 /** Account button with a small menu: who is signed in, sync state, "Wyloguj". */
 export function AccountMenu({ compact }: { compact?: boolean }) {
   const { user, logout } = useAuth();
   const { sync } = useStore();
   const [open, setOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,11 +48,22 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--block account__danger"
+            onClick={() => {
+              setOpen(false);
+              setResetOpen(true);
+            }}
+          >
+            Wyzeruj magazyn…
+          </button>
           <button type="button" className="btn btn--ghost btn--block" onClick={logout}>
             Wyloguj się
           </button>
         </div>
       )}
+      <ResetDialog open={resetOpen} onClose={() => setResetOpen(false)} />
     </div>
   );
 }

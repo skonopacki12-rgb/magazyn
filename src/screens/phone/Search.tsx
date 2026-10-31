@@ -120,7 +120,7 @@ export function PhoneSearch() {
 
         {n === 0 && !noneInCat && (
           <div className="card card--18 card--dashed empty">
-            <h2 className="empty__title">{hasQuery ? `Nie ma „${query.trim()}” w bazie` : 'Brak produktów'}</h2>
+            <h2 className="empty__title">{hasQuery ? `Nie ma „${query.trim()}” w bazie` : 'Magazyn jest pusty'}</h2>
             <p className="empty__text">
               {hasQuery ? 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.' : 'Dodaj pierwszy produkt — pojawi się w następnej inwentaryzacji.'}
             </p>

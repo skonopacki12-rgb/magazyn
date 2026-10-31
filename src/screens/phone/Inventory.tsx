@@ -3,8 +3,23 @@ import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
 import { TabBar } from '../../components/Shell';
 
+/** Shown instead of the count list when the warehouse has no products. */
+export function InventoryEmpty() {
+  return (
+    <div className="card card--18 card--dashed empty">
+      <h2 className="empty__title empty__title--sm">Nie ma czego liczyć</h2>
+      <p className="empty__text">Magazyn jest pusty. Dodaj produkty, a pojawią się tutaj do policzenia.</p>
+      <Link to="/produkt/nowy" className="btn btn--primary btn--md">
+        <Icon name="plus" size={18} />
+        Dodaj produkt
+      </Link>
+    </div>
+  );
+}
+
 export function FinishAction({ m, size, savedHref, savedLabel }: { m: InventoryModel; size: 'lg' | 'md'; savedHref: string; savedLabel: string }) {
   const cls = size === 'lg' ? 'btn btn--lg' : 'btn btn--md';
+  if (!m.total && !m.saved) return null;
   if (m.saved)
     return (
       <Link to={savedHref} className={`${cls} btn--success`}>
@@ -43,6 +58,7 @@ export function PhoneInventory() {
         <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
           Wpisz, ile sztuk leży na półce. „Bez zmian” przepisuje poprzedni stan.
         </p>
+        {!m.total && <InventoryEmpty />}
         {groups.map((g) => (
           <section key={g.id} className="stack-4" style={{ gap: 8 }}>
             <div className="heading-row">

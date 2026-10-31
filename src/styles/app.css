@@ -1577,3 +1577,77 @@ button.trow:hover {
     bottom: 24px;
   }
 }
+
+/* ───────── Reset dialog ───────── */
+.dialog {
+  width: min(480px, calc(100% - 32px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 16px 48px rgba(21, 23, 26, 0.24);
+}
+.dialog::backdrop {
+  background: rgba(21, 23, 26, 0.45);
+}
+.dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 20px 20px;
+}
+.dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.choice legend {
+  margin-bottom: 8px;
+}
+.choice__opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.choice__opt.is-on {
+  border-color: var(--ink);
+}
+.choice__opt input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+.btn--danger {
+  background: var(--out-bg);
+  border-color: var(--out-bg);
+  color: #fff;
+}
+.btn--danger:hover {
+  background: #8a1616;
+  color: #fff;
+}
+.btn--danger:disabled {
+  background: var(--border);
+  border-color: var(--border);
+  color: var(--ink-2);
+}
+.account__danger {
+  color: var(--out-bg);
+  border-color: var(--border);
+}

@@ -24,7 +24,11 @@ type Action =
   | { type: 'setCount'; id: string; value: string }
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
-  | { type: 'replace'; state: State };
+  | { type: 'replace'; state: State }
+  | { type: 'reset'; mode: ResetMode; date: string };
+
+/** `products`: delete every product (start from scratch). `stock`: keep products, set all stock to 0. */
+export type ResetMode = 'products' | 'stock';
 
 export type SyncStatus = 'saved' | 'saving' | 'error' | 'conflict';
 
@@ -32,6 +36,9 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'replace':
       return action.state;
+    case 'reset':
+      if (action.mode === 'products') return { products: [], lastCount: action.date, counts: {}, ordered: {} };
+      return { ...state, products: state.products.map((p) => ({ ...p, qty: 0 })), counts: {}, ordered: {} };
     case 'add':
       return {
         ...state,
@@ -74,6 +81,7 @@ interface Store {
   archiveProduct: (id: string) => void;
   setCount: (id: string, value: string) => void;
   finishInventory: () => void;
+  resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
   sync: SyncStatus;
   retrySync: () => void;
@@ -194,6 +202,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       archiveProduct: (id) => dispatch({ type: 'archive', id }),
       setCount: (id, value) => dispatch({ type: 'setCount', id, value }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
+      resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),
       sync,
       retrySync: () => void flush(),

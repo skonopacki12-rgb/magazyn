@@ -30,10 +30,12 @@ export function PhoneOrders() {
           </div>
         )}
       </main>
-      <div className="phone__footer">
-        <CopyButton m={m} className="btn btn--primary btn--lg btn--block" iconSize={20} />
-        <p className="hint hint--center">Lista z ilościami trafia do schowka — wklej ją w maila lub SMS.</p>
-      </div>
+      {m.total > 0 && (
+        <div className="phone__footer">
+          <CopyButton m={m} className="btn btn--primary btn--lg btn--block" iconSize={20} />
+          <p className="hint hint--center">Lista z ilościami trafia do schowka — wklej ją w maila lub SMS.</p>
+        </div>
+      )}
       <TabBar />
     </div>
   );

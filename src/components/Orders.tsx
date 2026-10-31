@@ -89,6 +89,7 @@ export function OrderGroups({ m, variant, headingLevel = 'h2' }: { m: OrdersMode
 }
 
 export function CopyButton({ m, className, short, iconSize = 18 }: { m: OrdersModel; className: string; short?: boolean; iconSize?: number }) {
+  if (!m.total) return null;
   return (
     <button type="button" className={className} onClick={m.copy} aria-live="polite">
       <Icon name={m.copied ? 'check' : 'copy'} size={iconSize} />

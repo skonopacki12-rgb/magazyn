@@ -4,7 +4,7 @@ import { CountInput, groupByCategory, Progress, SameButton, Segmented, useInvent
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
 import { formatDiff, matches, tokenize } from '../../lib/text';
-import { FinishAction } from '../phone/Inventory';
+import { FinishAction, InventoryEmpty } from '../phone/Inventory';
 
 export function TabletInventory() {
   const m = useInventory();
@@ -35,6 +35,7 @@ export function TabletInventory() {
         </div>
       </div>
       <main className="scroll" style={{ display: 'flex', flexDirection: 'column', gap: 22, padding: '6px 24px 24px' }}>
+        {!m.total && <InventoryEmpty />}
         {groups.map((g) => (
           <section key={g.id} style={{ flex: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div className="heading-row">
@@ -71,7 +72,19 @@ export function TabletInventory() {
           </section>
         ))}
         {todoDone && (
-          <div style={{ flex: 'none', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, padding: 24, borderRadius: 16, background: 'var(--ok-bg)', color: 'var(--ok-ink)' }}>
+          <div
+            style={{
+              flex: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: 12,
+              padding: 24,
+              borderRadius: 16,
+              background: 'var(--ok-bg)',
+              color: 'var(--ok-ink)',
+            }}
+          >
             <p style={{ fontSize: 18, lineHeight: '24px', fontWeight: 700 }}>Wszystko z tej listy policzone</p>
             <button type="button" className="btn" style={{ borderColor: 'var(--ok-ink)', color: 'var(--ok-ink)' }} onClick={m.showAll}>
               Pokaż wszystkie
@@ -79,7 +92,17 @@ export function TabletInventory() {
           </div>
         )}
       </main>
-      <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px 18px', background: 'var(--bg)', borderTop: '1px solid var(--line)' }}>
+      <div
+        style={{
+          flex: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '14px 24px 18px',
+          background: 'var(--bg)',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
         <p className="muted" style={{ flex: 1, fontSize: 14, lineHeight: '20px' }}>
           Postęp zapisuje się na bieżąco — możesz dokończyć później.
         </p>
@@ -128,7 +151,8 @@ export function LaptopInventory() {
             />
             <span className="hint">Tab przechodzi do następnego pola · „Bez zmian” wpisuje poprzedni stan</span>
           </div>
-          <div className="card table-wrap">
+          {!m.total && <InventoryEmpty />}
+          <div className="card table-wrap" hidden={!m.total}>
             <div className="table--inv">
               <div aria-hidden="true" className="trow trow--head trow--inv">
                 <span>Produkt</span>
@@ -170,7 +194,7 @@ export function LaptopInventory() {
                   </ul>
                 </section>
               ))}
-              {groups.length === 0 && (
+              {groups.length === 0 && m.total > 0 && (
                 <p className="empty__text" style={{ padding: '28px 16px' }}>
                   {tokens.length ? `Nic nie pasuje do „${query.trim()}”.` : 'Wszystko z tej listy jest już policzone.'}
                 </p>

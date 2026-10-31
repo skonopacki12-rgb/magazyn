@@ -18,7 +18,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
   const orders = useOrders();
   const outN = needs.filter((p) => p.isOut).length;
   const n = m.results.length;
-  const emptyKind = !m.hasQuery ? 'pick' : m.matched.length ? 'cat' : 'none';
+  const emptyKind = !m.all.length ? 'empty' : !m.hasQuery ? 'pick' : m.matched.length ? 'cat' : 'none';
 
   return (
     <div className="wide">
@@ -33,7 +33,13 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
       <div className="md">
         <section aria-label="Lista produktów" className="md__list">
           <div className="md__list-head">
-            <SearchField id="t-szukaj" value={m.query} onChange={m.setQuery} placeholder="Nazwa lub kod, np. kokos" label="Szukaj produktu po nazwie lub kodzie" />
+            <SearchField
+              id="t-szukaj"
+              value={m.query}
+              onChange={m.setQuery}
+              placeholder="Nazwa lub kod, np. kokos"
+              label="Szukaj produktu po nazwie lub kodzie"
+            />
             <CategoryChips value={m.cat} onChange={m.setCat} matched={m.matched} layout="scroll" />
           </div>
           <div className="md__list-body">
@@ -146,7 +152,11 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
               <h2 className="title-lg">{m.editId ? 'Edytuj produkt' : 'Nowy produkt'}</h2>
               <ProductFields idPrefix="t-f" draft={m.draft} onChange={m.setDraft} layout="tablet" />
               {m.err && <p className="form-error">Podaj nazwę produktu.</p>}
-              {!m.editId && <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>Nowy produkt ma stan 0, dopóki nie policzysz go w inwentaryzacji.</p>}
+              {!m.editId && (
+                <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
+                  Nowy produkt ma stan 0, dopóki nie policzysz go w inwentaryzacji.
+                </p>
+              )}
               <div style={{ display: 'flex', gap: 12 }}>
                 <button type="button" className="btn btn--primary btn--lg" onClick={m.submit}>
                   {m.editId ? 'Zapisz zmiany' : 'Dodaj produkt'}
@@ -161,16 +171,24 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
           {m.panel === 'product' && !m.sel && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, maxWidth: 520, paddingTop: 32 }}>
               <h2 style={{ fontSize: 28, lineHeight: '34px', fontWeight: 700, letterSpacing: '-0.01em' }}>
-                {emptyKind === 'pick' ? 'Wybierz produkt z listy' : emptyKind === 'cat' ? `Nic w kategorii „${chipLabel(m.cat)}”` : `Nie ma „${m.query.trim()}” w bazie`}
+                {emptyKind === 'empty'
+                  ? 'Magazyn jest pusty'
+                  : emptyKind === 'pick'
+                    ? 'Wybierz produkt z listy'
+                    : emptyKind === 'cat'
+                      ? `Nic w kategorii „${chipLabel(m.cat)}”`
+                      : `Nie ma „${m.query.trim()}” w bazie`}
               </h2>
               <p className="muted" style={{ fontSize: 16, lineHeight: '24px' }}>
-                {emptyKind === 'pick'
-                  ? 'Zobaczysz tu stan, minimum i historię inwentaryzacji.'
-                  : emptyKind === 'cat'
-                    ? 'Pasujące produkty są w innych kategoriach.'
-                    : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
+                {emptyKind === 'empty'
+                  ? 'Dodaj pierwszy produkt — pojawi się w następnej inwentaryzacji.'
+                  : emptyKind === 'pick'
+                    ? 'Zobaczysz tu stan, minimum i historię inwentaryzacji.'
+                    : emptyKind === 'cat'
+                      ? 'Pasujące produkty są w innych kategoriach.'
+                      : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
               </p>
-              {emptyKind === 'none' && (
+              {(emptyKind === 'none' || emptyKind === 'empty') && (
                 <button type="button" className="btn btn--primary btn--lg" style={{ padding: '0 20px' }} onClick={m.openNew}>
                   <Icon name="plus" size={18} />
                   Dodaj produkt

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "magazyn",
+  "name": "magazyn2",
   "account_id": "98a3d293f841838f516a14de572e6845",
   "main": "worker/index.ts",
   "compatibility_date": "2025-09-06",
