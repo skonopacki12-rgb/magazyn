@@ -166,9 +166,12 @@ export function useInventory() {
       const rest = items.filter((p) => !p.counted);
       const zero = rest.filter((p) => !p.uncounted);
       if (rest.length) {
+        const names = zero.slice(0, 8).map((p) => `• ${p.name} (${p.qty} ${p.unit})`).join('\n');
         const msg =
           `Niepoliczone: ${rest.length}. ` +
-          (zero.length ? `${zero.length} z nich miało stan — zapiszę je jako 0 (brak). ` : '') +
+          (zero.length
+            ? `UWAGA: ${zero.length} z nich ma stan i zostanie wyzerowanych (brak):\n${names}${zero.length > 8 ? `\n… i ${zero.length - 8} innych` : ''}\n\n`
+            : '') +
           (rest.length - zero.length ? `${rest.length - zero.length} bez stanu zostanie jako nieliczone. ` : '') +
           'Zakończyć inwentaryzację?';
         if (!window.confirm(msg)) return;

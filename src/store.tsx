@@ -99,6 +99,23 @@ function auditFor(state: State, shelf: string, date: string): ShelfAudit {
   return a && a.date === date ? a : { date, done: [] };
 }
 
+/**
+ * A product counted on a shelf ("Po półkach") also counts in the regular inventory, so finishing the
+ * inventory doesn't treat it as missing. Not counted yet → its stock after the shelf count; counted
+ * already → the shelf correction is added to that number.
+ */
+function countFromShelf(state: State, products: Product[], pid: string, delta: number): Pick<State, 'counts' | 'countLots'> {
+  const p = products.find((x) => x.id === pid);
+  const counts = state.counts;
+  const countLots = state.countLots ?? {};
+  if (!p) return { counts, countLots };
+  const had = counts[pid];
+  if (had == null || had === '') return { counts: { ...counts, [pid]: String(p.qty) }, countLots: { ...countLots, [pid]: p.lots ?? [] } };
+  if (!delta) return { counts, countLots };
+  if (countLots[pid]?.length) return { counts: { ...counts, [pid]: String(p.qty) }, countLots: { ...countLots, [pid]: p.lots ?? [] } };
+  return { counts: { ...counts, [pid]: String(Math.max(0, Number(had) + delta)) }, countLots };
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'replace':
@@ -157,6 +174,7 @@ function reducer(state: State, action: Action): State {
       const audit = auditFor(state, action.adjust.shelf, action.date);
       return {
         ...state,
+        ...countFromShelf(state, r.products, action.adjust.productId, r.move?.qty ?? 0),
         products: r.products,
         shelves: r.shelves,
         log: r.move ? [r.move, ...(state.log ?? [])].slice(0, LOG_LIMIT) : state.log,
@@ -165,8 +183,9 @@ function reducer(state: State, action: Action): State {
     }
     case 'shelfCheck': {
       const audit = auditFor(state, action.shelf, action.date);
-      const done = audit.done.includes(action.productId) ? audit.done.filter((x) => x !== action.productId) : [...audit.done, action.productId];
-      return { ...state, shelfAudit: { ...(state.shelfAudit ?? {}), [action.shelf]: { ...audit, done } } };
+      const undo = audit.done.includes(action.productId);
+      const done = undo ? audit.done.filter((x) => x !== action.productId) : [...audit.done, action.productId];
+      return { ...state, ...(undo ? {} : countFromShelf(state, state.products, action.productId, 0)), shelfAudit: { ...(state.shelfAudit ?? {}), [action.shelf]: { ...audit, done } } };
     }
     case 'shelfFinish': {
       const audit = auditFor(state, action.shelf, action.date);
