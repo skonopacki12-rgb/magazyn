@@ -2930,3 +2930,7 @@ button.rack__slot:hover {
     background: transparent;
   }
 }
+
+.sync--offline {
+  background: #3a2300;
+}

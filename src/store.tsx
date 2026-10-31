@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { loadCopy, saveCopy } from './lib/offline';
 import { mergeValue } from './lib/merge';
 import { LOG_LIMIT as PARTS_LOG_LIMIT, mergeLog, PART_NAMES, PARTS, partChanged, pickPart, type PartName } from './lib/parts';
 import { useAuth, Splash } from './auth';
@@ -87,7 +88,7 @@ type Action =
 /** `products`: delete every product (start from scratch). `stock`: keep products, set all stock to 0. */
 export type ResetMode = 'products' | 'stock';
 
-export type SyncStatus = 'saved' | 'saving' | 'error' | 'conflict';
+export type SyncStatus = 'saved' | 'saving' | 'error' | 'conflict' | 'offline';
 
 const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
@@ -291,22 +292,45 @@ const Ctx = createContext<Store | null>(null);
 
 /** Loads the signed-in user's warehouse from Cloudflare (D1), then provides it. */
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const { expired } = useAuth();
-  const [loaded, setLoaded] = useState<{ data: State; versions: Record<PartName, number> } | null>(null);
+  const { expired, user } = useAuth();
+  const [loaded, setLoaded] = useState<{ data: State; saved: State; versions: Record<PartName, number>; offline?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => {
     setError(null);
+    const copy = loadCopy<State>(user.id);
     api
       .getState()
-      .then(setLoaded)
-      .catch((e: ApiError) => (e.status === 401 ? expired() : setError(e.message)));
-  }, [expired]);
+      .then((server) => {
+        // Unsaved changes from this device (e.g. made offline) win for the parts they touch;
+        // they'll be saved (and merged with the server copy) right away.
+        if (copy) {
+          const dirty = PART_NAMES.filter((p) => partChanged(copy.state as never, copy.saved as never, p));
+          if (dirty.length) {
+            let data = server.data;
+            let saved = server.data;
+            const versions = { ...server.versions };
+            for (const p of dirty) {
+              data = { ...data, ...(pickPart(copy.state as never, p) as Partial<State>) };
+              saved = { ...saved, ...(pickPart(copy.saved as never, p) as Partial<State>) };
+              versions[p] = copy.versions[p] ?? 0;
+            }
+            return setLoaded({ data, saved, versions });
+          }
+        }
+        setLoaded({ data: server.data, saved: server.data, versions: server.versions });
+      })
+      .catch((e: ApiError) => {
+        if (e.status === 401) return expired();
+        if (e.status === 0 && copy) return setLoaded({ data: copy.state, saved: copy.saved, versions: copy.versions, offline: true });
+        setError(e.status === 0 ? 'Brak połączenia z internetem, a na tym urządzeniu nie ma jeszcze zapisanej kopii magazynu.' : e.message);
+      });
+  }, [expired, user.id]);
   useEffect(load, [load]);
 
   if (error) return <Splash text={error} retry={load} />;
   if (!loaded) return <Splash text="Wczytywanie magazynu…" />;
   return (
-    <SyncedStore initial={loaded.data} versions={loaded.versions} onUnauthorized={expired}>
+    <SyncedStore userId={user.id} initial={loaded.data} saved={loaded.saved} versions={loaded.versions} offline={loaded.offline} onUnauthorized={expired}>
       {children}
     </SyncedStore>
   );
@@ -320,21 +344,27 @@ const RETRY_DELAY = 4000;
  * Saves are serialized; a 409 means another device saved first, so we adopt the server copy.
  */
 function SyncedStore({
+  userId,
   initial,
+  saved: initialSaved,
   versions,
+  offline,
   onUnauthorized,
   children,
 }: {
+  userId: string;
   initial: State;
+  saved: State;
   versions: Record<PartName, number>;
+  offline?: boolean;
   onUnauthorized: () => void;
   children: ReactNode;
 }) {
   const [state, dispatch] = useReducer(reducer, initial);
-  const [sync, setSync] = useState<SyncStatus>('saved');
+  const [sync, setSync] = useState<SyncStatus>(offline ? 'offline' : 'saved');
   const stateRef = useRef(state);
   /** Last state known to be saved — compared per part (by field identity) to find what changed. */
-  const savedRef = useRef(initial);
+  const savedRef = useRef(initialSaved);
   const versionsRef = useRef(versions);
   const inFlight = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
@@ -384,7 +414,7 @@ function SyncedStore({
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 401) return onUnauthorized();
-      setSync('error');
+      setSync(err.status === 0 ? 'offline' : 'error');
       retryIn = RETRY_DELAY;
     } finally {
       inFlight.current = false;
@@ -398,6 +428,19 @@ function SyncedStore({
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, SAVE_DELAY);
   }, [state, flush]);
+
+  // Local copy on this device (works offline; merged with the server on reconnect).
+  useEffect(() => {
+    const t = setTimeout(() => saveCopy(userId, { state, saved: savedRef.current, versions: versionsRef.current }), 300);
+    return () => clearTimeout(t);
+  }, [state, sync, userId]);
+
+  // Back online → save what's waiting.
+  useEffect(() => {
+    const on = () => void flush();
+    window.addEventListener('online', on);
+    return () => window.removeEventListener('online', on);
+  }, [flush]);
 
   // Save immediately when the tab is hidden or closed, so a quick switch away doesn't lose counts.
   useEffect(() => {

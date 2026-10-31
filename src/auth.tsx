@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api, type User } from './lib/api';
+import { cachedUser, clearCopy, rememberUser } from './lib/offline';
+import { api, ApiError, type User } from './lib/api';
 
 interface Auth {
   user: User;
@@ -25,23 +26,44 @@ export function AuthGate({ children, signedOut }: { children: ReactNode; signedO
     setError(null);
     api
       .me()
-      .then((r) => setUser(r.user))
-      .catch((e: Error) => setError(e.message));
+      .then((r) => {
+        rememberUser(r.user);
+        setUser(r.user);
+      })
+      .catch((e: ApiError) => {
+        // No network: carry on with the account remembered on this device (works offline).
+        const cached = e.status === 0 ? cachedUser() : null;
+        if (cached) setUser(cached);
+        else setError(e.message);
+      });
   }, []);
   useEffect(check, [check]);
 
   if (error) return <Splash text={error} retry={check} />;
   if (user === undefined) return <Splash text="Ładowanie…" />;
-  if (!user) return <>{signedOut(setUser)}</>;
+  if (!user)
+    return (
+      <>
+        {signedOut((u) => {
+          rememberUser(u);
+          setUser(u);
+        })}
+      </>
+    );
   return (
     <Ctx.Provider
       value={{
         user,
         logout: async () => {
           await api.logout().catch(() => undefined);
+          clearCopy(user.id);
+          rememberUser(null);
           setUser(null);
         },
-        expired: () => setUser(null),
+        expired: () => {
+          rememberUser(null);
+          setUser(null);
+        },
       }}
     >
       {children}

@@ -8,6 +8,14 @@ Działa na telefonie, tablecie i laptopie.
 - **Backend:** Cloudflare Worker (`worker/`) — API pod `/api/*`; ten sam Worker serwuje aplikację
 - **Dane:** Cloudflare D1 (SQLite) — użytkownicy, sesje i magazyn każdego użytkownika
 
+## Aplikacja na telefonie i praca offline
+
+- **iPhone/iPad:** Safari → przycisk Udostępnij → „Do ekranu początkowego”. **Android:** Chrome → menu → „Zainstaluj aplikację”.
+  Aplikacja otwiera się na pełnym ekranie z własną ikoną.
+- **Bez sieci:** aplikacja i zdjęcia są zapamiętane w urządzeniu (service worker `public/sw.js`),
+  a stan magazynu — w lokalnej kopii. Można pracować normalnie; po powrocie internetu zmiany zapisują się
+  same i scalają ze zmianami z innych urządzeń. Wylogowanie usuwa lokalną kopię.
+
 ## Wdrożenie na Cloudflare
 
 Potrzebne: konto Cloudflare i Node.js 20+.

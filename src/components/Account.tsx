@@ -25,7 +25,7 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
     };
   }, [open]);
 
-  const syncText = sync === 'saving' ? 'Zapisywanie…' : sync === 'error' ? 'Nie zapisano — brak połączenia' : 'Zapisano w chmurze';
+  const syncText = sync === 'saving' ? 'Zapisywanie…' : sync === 'offline' ? 'Offline — zapisze się po połączeniu' : sync === 'error' ? 'Nie zapisano — błąd' : 'Zapisano w chmurze';
 
   return (
     <div className="account" ref={ref}>
@@ -91,6 +91,12 @@ export function SyncNotice() {
         <button type="button" onClick={retrySync}>
           Zapisz teraz
         </button>
+      </div>
+    );
+  if (sync === 'offline')
+    return (
+      <div className="sync sync--offline" role="status">
+        <span>Brak sieci — pracujesz na kopii z tego urządzenia. Zmiany zapiszą się same po połączeniu.</span>
       </div>
     );
   if (sync === 'conflict')
