@@ -30,10 +30,15 @@ export function FinishAction({ m, size, savedHref, savedLabel }: { m: InventoryM
   if (!m.total && !m.saved) return null;
   if (m.saved)
     return (
-      <Link to={savedHref} className={`${cls} btn--success`}>
-        <Icon name="check" size={size === 'lg' ? 20 : 18} />
-        {savedLabel}
-      </Link>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <Link to={savedHref} className={`${cls} btn--success`}>
+          <Icon name="check" size={size === 'lg' ? 20 : 18} />
+          {savedLabel}
+        </Link>
+        <Link to="/raporty" className={`${cls} btn--ghost`}>
+          Zobacz raport inwentaryzacji
+        </Link>
+      </span>
     );
   if (m.complete)
     return (

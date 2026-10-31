@@ -49,6 +49,9 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <Link to="/raporty" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
+            Raport i zużycie
+          </Link>
           <Link to="/kopia" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
             Kopia zapasowa i eksport
           </Link>

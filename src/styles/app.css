@@ -2788,3 +2788,58 @@ button.rack__slot:hover {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ───────── Report ───────── */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.kpi__label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.kpi__value {
+  font-family: var(--mono);
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 600;
+}
+.rep {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+.rep th {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+.rep th.t-right {
+  text-align: right;
+}
+.rep td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: middle;
+}

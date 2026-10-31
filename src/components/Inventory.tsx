@@ -81,7 +81,13 @@ export function useInventory() {
     set,
     same: (p: InvItem) => {
       if (snapshot) setSnapshot(null);
-      if (p.prevLots.length) setLots(p.id, cloneLots(p.prevLots));
+      if (p.prevLots.length) {
+        // Lots may cover only part of the stock (e.g. a delivery on top of a count without lots):
+        // the rest goes in as a lot without details, so "Bez zmian" always equals the previous stock.
+        const lots = cloneLots(p.prevLots);
+        const rest = p.prev - lots.reduce((s, l) => s + l.qty, 0);
+        setLots(p.id, rest > 0 ? [...lots, newLot({ qty: rest })] : lots);
+      }
       else setCount(p.id, String(p.prev));
     },
     setLots: (p: InvItem, lots: Lot[]) => {

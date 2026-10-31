@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { ReportScreen } from './screens/ReportScreen';
 import { CatalogPriceSync } from './components/CatalogPriceSync';
 import { SyncNotice } from './components/Account';
 import { ShelfOptions } from './components/Lots';
@@ -57,6 +58,7 @@ export function App() {
         <Route path="/szkolenie" element={<TrainingScreen />} />
         <Route path="/polki" element={<ShelvesScreen />} />
         <Route path="/kopia" element={<BackupScreen />} />
+        <Route path="/raporty" element={<ReportScreen />} />
         <Route path="/inwentaryzacja/polki" element={<ShelfCountList />} />
         <Route path="/inwentaryzacja/polki/:name" element={<ShelfCount />} />
         <Route path="/polki/:id" element={<ShelfEditor />} />

@@ -69,6 +69,13 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 | GET    | `/api/state`         | magazyn użytkownika `{ data, version }`    |
 | PUT    | `/api/state`         | `{ data, version }` → 409 przy konflikcie  |
 
+## Raport i zużycie
+
+Menu konta → **Raport i zużycie** (`/raporty`; link też po zakończeniu inwentaryzacji):
+- wybór inwentaryzacji i porównanie z poprzednią: było, dostawy, straty (wyrzucone/inne), jest, **zużycie**
+  (= było + dostawy + korekty − jest − straty) i średnie zużycie na miesiąc; wartości netto; eksport CSV,
+- **sugerowane minimum** = średnie zużycie × zapas na 7–45 dni; zaznaczasz i „Ustaw zaznaczone minima”.
+
 ## Kopia zapasowa i eksport
 
 Menu konta → **Kopia zapasowa i eksport** (`/kopia`):
