@@ -8,6 +8,7 @@ import { CatalogScreen } from './screens/CatalogScreen';
 import { ExpiryScreen } from './screens/ExpiryScreen';
 import { OrdersScreen } from './screens/OrdersScreen';
 import { ShelfEditor, ShelvesScreen } from './screens/ShelvesScreen';
+import { ShelfCount, ShelfCountList } from './screens/ShelfCountScreen';
 import { TrainingScreen } from './screens/TrainingScreen';
 import { PhoneInventory } from './screens/phone/Inventory';
 import { PhoneProduct } from './screens/phone/Product';
@@ -53,6 +54,8 @@ export function App() {
         <Route path="/terminy" element={<ExpiryScreen />} />
         <Route path="/szkolenie" element={<TrainingScreen />} />
         <Route path="/polki" element={<ShelvesScreen />} />
+        <Route path="/inwentaryzacja/polki" element={<ShelfCountList />} />
+        <Route path="/inwentaryzacja/polki/:name" element={<ShelfCount />} />
         <Route path="/polki/:id" element={<ShelfEditor />} />
         <Route path="/produkt/nowy" element={<NewProductRoute />} />
         <Route path="/produkt/:id" element={<ProductRoute />} />

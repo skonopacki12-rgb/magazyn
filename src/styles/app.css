@@ -2724,3 +2724,55 @@ button.rack__slot:hover {
 .over-warn > span {
   flex: 1 1 240px !important;
 }
+
+/* ───────── Shelf count ───────── */
+.sc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  min-height: 72px;
+  padding: 10px 14px;
+}
+.sc-row.is-done {
+  background: #f4faf5;
+}
+.sc-qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-qty .stepper__btn {
+  width: 44px;
+  height: 44px;
+}
+.sc-qty .stepper__input {
+  width: 64px;
+  height: 44px;
+  font-size: 18px;
+}
+.sc-ok {
+  min-height: 44px;
+}
+.shelf-card.is-finished {
+  border-color: var(--ok-line);
+}
+
+.quick__btn--open {
+  border-color: var(--low-bg);
+  background: #fff6e0;
+}
+.quick__btn:disabled {
+  opacity: 0.5;
+}
+.quick__ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}

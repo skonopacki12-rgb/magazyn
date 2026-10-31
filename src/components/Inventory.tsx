@@ -99,6 +99,14 @@ export function useInventory() {
       else lots.push(newLot({ qty: add, open: false, shelf: tpl?.shelf, expiresAt: lots.length ? tpl?.expiresAt : undefined }));
       setLots(p.id, lots);
     },
+    /** "+ Otwarta butelka": adds an opened bottle (opened today) — 1 szt., or what's left in ml. */
+    addOpen: (p: InvItem, qty: number) => {
+      if (qty <= 0) return;
+      if (snapshot) setSnapshot(null);
+      const lots = p.countLots.length ? [...p.countLots] : p.counted && Number(p.val) > 0 ? [newLot({ qty: Number(p.val) })] : [];
+      const tpl = lots[lots.length - 1] ?? p.prevLots[p.prevLots.length - 1];
+      setLots(p.id, [...lots, newLot({ qty, open: true, openedAt: todayIso(), shelf: tpl?.shelf, expiresAt: lots.length ? tpl?.expiresAt : undefined })]);
+    },
     /** "+ Zgrzewka": adds a full case (e.g. 12 mixers) as one lot. */
     addCase: (p: InvItem) => {
       const size = packSizeOf(p);
@@ -209,22 +217,74 @@ export function Segmented({ m, small }: { m: InventoryModel; small?: boolean }) 
   );
 }
 
-/** Quick-add buttons under a product in inventory: a closed full bottle, or a full case for products in cases. */
+/** Quick-add buttons under a product in inventory: a closed full bottle, an opened bottle, a full case. */
 export function QuickAdd({ m, p }: { m: InventoryModel; p: InvItem }) {
   const size = packSizeOf(p);
   const vol = volumeOf(p);
   const add = bottleQty(p);
+  const inMl = p.unit === 'ml' && add > 1;
+  const [asking, setAsking] = useState(false);
+  const [ml, setMl] = useState('');
+  const openAdd = (q: number) => {
+    m.addOpen(p, q);
+    setAsking(false);
+    setMl('');
+  };
   return (
     <span className="quick">
       <button type="button" className="quick__btn" onClick={() => m.addBottle(p)} aria-label={`Dodaj zamkniętą pełną butelkę: ${p.name}`}>
         <Icon name="plus" size={14} strokeWidth={2.6} />
-        Pełna butelka{p.unit === 'ml' && add > 1 ? ` ${add} ml` : vol ? ` · ${formatVolume(vol)}` : ''}
+        Pełna butelka{inMl ? ` ${add} ml` : vol ? ` · ${formatVolume(vol)}` : ''}
+      </button>
+      <button
+        type="button"
+        className="quick__btn quick__btn--open"
+        aria-expanded={inMl ? asking : undefined}
+        onClick={() => (inMl ? setAsking(!asking) : openAdd(1))}
+        aria-label={`Dodaj otwartą butelkę: ${p.name}`}
+      >
+        <Icon name="plus" size={14} strokeWidth={2.6} />
+        Otwarta butelka
       </button>
       {size && (
         <button type="button" className="quick__btn quick__btn--case" onClick={() => m.addCase(p)} aria-label={`Dodaj pełną zgrzewkę ${size} szt.: ${p.name}`}>
           <Icon name="plus" size={14} strokeWidth={2.6} />
           Zgrzewka ({size} szt.)
         </button>
+      )}
+      {asking && inMl && (
+        <span className="quick__ask" role="group" aria-label="Ile zostało w otwartej butelce">
+          <span className="hint" style={{ width: '100%' }}>
+            Ile zostało w butelce ({add} ml)?
+          </span>
+          {[
+            ['¾', 0.75],
+            ['½', 0.5],
+            ['¼', 0.25],
+          ].map(([label, f]) => (
+            <button key={label as string} type="button" className="quick__btn" onClick={() => openAdd(Math.round(add * (f as number)))}>
+              {label} · {Math.round(add * (f as number))} ml
+            </button>
+          ))}
+          <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+            <label className="sr-only" htmlFor={`open-ml-${p.id}`}>
+              Ile ml zostało
+            </label>
+            <input
+              id={`open-ml-${p.id}`}
+              className="input input--mono"
+              style={{ width: 84, height: 34, padding: '0 8px', fontSize: 14 }}
+              inputMode="numeric"
+              placeholder="ml"
+              value={ml}
+              onChange={(e) => setMl(e.target.value.replace(/[^0-9]/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && Number(ml) > 0 && openAdd(Math.min(Number(ml), add))}
+            />
+            <button type="button" className="quick__btn quick__btn--open" disabled={!(Number(ml) > 0)} onClick={() => openAdd(Math.min(Number(ml), add))}>
+              Dodaj
+            </button>
+          </span>
+        </span>
       )}
     </span>
   );

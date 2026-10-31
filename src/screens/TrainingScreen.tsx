@@ -171,8 +171,8 @@ function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[
                   </span>
                 </span>
                 <span className="mono" style={{ fontWeight: 600 }}>
-                  {m.kind === 'moved' || m.kind === 'opened' ? '' : m.kind === 'delivered' ? '+' : '−'}
-                  {m.qty} {m.unit}
+                  {m.kind === 'moved' || m.kind === 'opened' ? '' : m.kind === 'delivered' || (m.kind === 'adjusted' && m.qty > 0) ? '+' : '−'}
+                  {Math.abs(m.qty)} {m.unit}
                 </span>
                 <span className="hint" style={{ minWidth: 84, textAlign: 'right' }}>
                   {new Date(m.at).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}

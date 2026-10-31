@@ -4,6 +4,7 @@ import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
 import { packSizeOf, splitIntoCases } from './lib/pack';
 import { parseSize } from './lib/volume';
+import { adjustOnShelf, type Adjust } from './lib/shelfCount';
 import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
 import { formatDate, todayIso } from './lib/text';
 import { newLot } from './lib/fifo';
@@ -29,6 +30,15 @@ export interface State {
   pending?: Pending[];
   /** Shelf layouts (rows → slots → products). */
   shelves?: ShelfDef[];
+  /** Shelf-by-shelf count: products confirmed per shelf and when the shelf was finished. */
+  shelfAudit?: Record<string, ShelfAudit>;
+}
+
+export interface ShelfAudit {
+  /** ISO date the checks below belong to (checks from other days don't count). */
+  date: string;
+  done: string[];
+  finished?: boolean;
 }
 
 export interface Receipt {
@@ -54,6 +64,9 @@ type Action =
   | { type: 'receive'; pendingId: string; parts: Receipt[]; at: string }
   | { type: 'cancelPending'; pendingId: string }
   | { type: 'saveShelf'; shelf: ShelfDef }
+  | { type: 'shelfAdjust'; adjust: Adjust; at: string; date: string }
+  | { type: 'shelfCheck'; shelf: string; productId: string; date: string }
+  | { type: 'shelfFinish'; shelf: string; date: string; finished: boolean }
   | { type: 'deleteShelf'; id: string }
   | { type: 'finishTraining'; date: string }
   | { type: 'finishInventory'; date: string }
@@ -65,6 +78,12 @@ type Action =
 export type ResetMode = 'products' | 'stock';
 
 export type SyncStatus = 'saved' | 'saving' | 'error' | 'conflict';
+
+/** Today's audit of a shelf (an audit from another day starts fresh). */
+function auditFor(state: State, shelf: string, date: string): ShelfAudit {
+  const a = state.shelfAudit?.[shelf];
+  return a && a.date === date ? a : { date, done: [] };
+}
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -108,6 +127,26 @@ function reducer(state: State, action: Action): State {
       const list = state.shelves ?? [];
       const i = list.findIndex((s) => s.id === action.shelf.id);
       return { ...state, shelves: i < 0 ? [...list, action.shelf] : list.map((s, j) => (j === i ? action.shelf : s)) };
+    }
+    case 'shelfAdjust': {
+      const r = adjustOnShelf(state.products, state.shelves ?? [], action.adjust, action.at);
+      const audit = auditFor(state, action.adjust.shelf, action.date);
+      return {
+        ...state,
+        products: r.products,
+        shelves: r.shelves,
+        log: r.move ? [r.move, ...(state.log ?? [])].slice(0, LOG_LIMIT) : state.log,
+        shelfAudit: { ...(state.shelfAudit ?? {}), [action.adjust.shelf]: { ...audit, done: [...new Set([...audit.done, action.adjust.productId])] } },
+      };
+    }
+    case 'shelfCheck': {
+      const audit = auditFor(state, action.shelf, action.date);
+      const done = audit.done.includes(action.productId) ? audit.done.filter((x) => x !== action.productId) : [...audit.done, action.productId];
+      return { ...state, shelfAudit: { ...(state.shelfAudit ?? {}), [action.shelf]: { ...audit, done } } };
+    }
+    case 'shelfFinish': {
+      const audit = auditFor(state, action.shelf, action.date);
+      return { ...state, shelfAudit: { ...(state.shelfAudit ?? {}), [action.shelf]: { ...audit, finished: action.finished } } };
     }
     case 'deleteShelf':
       return { ...state, shelves: (state.shelves ?? []).filter((s) => s.id !== action.id) };
@@ -216,6 +255,10 @@ interface Store {
   shelves: ShelfDef[];
   saveShelf: (shelf: ShelfDef) => void;
   deleteShelf: (id: string) => void;
+  shelfAudit: (shelf: string) => ShelfAudit;
+  adjustShelf: (adjust: Adjust) => void;
+  checkOnShelf: (shelf: string, productId: string) => void;
+  finishShelf: (shelf: string, finished: boolean) => void;
   finishInventory: () => void;
   resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
@@ -385,6 +428,10 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       shelves: state.shelves ?? [],
       saveShelf: (shelf) => dispatch({ type: 'saveShelf', shelf }),
       deleteShelf: (id) => dispatch({ type: 'deleteShelf', id }),
+      shelfAudit: (shelf) => auditFor(state, shelf, todayIso()),
+      adjustShelf: (adjust) => dispatch({ type: 'shelfAdjust', adjust, at: new Date().toISOString(), date: todayIso() }),
+      checkOnShelf: (shelf, productId) => dispatch({ type: 'shelfCheck', shelf, productId, date: todayIso() }),
+      finishShelf: (shelf, finished) => dispatch({ type: 'shelfFinish', shelf, date: todayIso(), finished }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
       resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),

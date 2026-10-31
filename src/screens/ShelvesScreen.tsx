@@ -221,6 +221,10 @@ export function ShelfEditor() {
           <span className="hint" style={{ flex: 1, paddingBottom: 14 }}>
             {shelf.rows.length} {plural(shelf.rows.length, 'rząd', 'rzędy', 'rzędów')} · {filled(shelf)}/{total(shelf)} miejsc zajętych
           </span>
+          <Link to={`/inwentaryzacja/polki/${encodeURIComponent(shelf.name)}`} className="btn btn--ghost">
+            <Icon name="clipboard" size={18} />
+            Policz tę półkę
+          </Link>
           <button
             type="button"
             className="btn btn--quiet"

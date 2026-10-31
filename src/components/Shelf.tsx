@@ -123,6 +123,7 @@ export function ProductPicker({
   title,
   suggested,
   free,
+  allowFill = true,
   onPick,
   onClear,
   onClose,
@@ -134,7 +135,9 @@ export function ProductPicker({
   /** Products that sit on this shelf according to lots — shown first. */
   suggested: StockedProduct[];
   /** Bottles of `p` that can still be placed in this slot (stock minus bottles already on shelves). */
-  free: (p: StockedProduct) => number;
+  free?: (p: StockedProduct) => number;
+  /** Show the "fill the row" option (shelf layout editor). */
+  allowFill?: boolean;
   onPick: (p: StockedProduct, fillRow: boolean) => void;
   onClear: () => void;
   onClose: () => void;
@@ -182,13 +185,15 @@ export function ProductPicker({
           </div>
         )}
         <SearchField id="picker-q" size="filter" value={q} onChange={setQ} placeholder="Szukaj produktu (nazwa, kod)" label="Szukaj produktu" />
-        <label className="ret__check" style={{ fontSize: 14 }}>
-          <input type="checkbox" checked={fillRow} onChange={() => setFillRow(!fillRow)} />
-          Wstaw też w puste miejsca tego rzędu (tyle, ile jest wolnych butelek)
-        </label>
+        {allowFill && (
+          <label className="ret__check" style={{ fontSize: 14 }}>
+            <input type="checkbox" checked={fillRow} onChange={() => setFillRow(!fillRow)} />
+            Wstaw też w puste miejsca tego rzędu (tyle, ile jest wolnych butelek)
+          </label>
+        )}
         <ul className="rows picker__list">
           {list.map((p) => {
-            const f = free(p);
+            const f = free ? free(p) : Infinity;
             return (
               <li key={p.id}>
                 <button type="button" className="row-link picker__item" style={{ minHeight: 60 }} disabled={f <= 0} onClick={() => onPick(p, fillRow)}>
@@ -202,12 +207,18 @@ export function ProductPicker({
                       {sugg.has(p.id) ? ' · na tej półce wg partii' : ''}
                     </span>
                   </span>
-                  <span className={`picker__free${f > 0 ? '' : ' is-none'}`}>
-                    {f > 0 ? `wolne ${f}` : 'wszystkie na półkach'}
-                    <span className="hint" style={{ display: 'block', color: 'inherit', fontWeight: 400 }}>
+                  {free ? (
+                    <span className={`picker__free${f > 0 ? '' : ' is-none'}`}>
+                      {f > 0 ? `wolne ${f}` : 'wszystkie na półkach'}
+                      <span className="hint" style={{ display: 'block', color: 'inherit', fontWeight: 400 }}>
+                        stan {p.qty} {p.unit}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="hint">
                       stan {p.qty} {p.unit}
                     </span>
-                  </span>
+                  )}
                 </button>
               </li>
             );

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
@@ -32,6 +33,10 @@ export function TabletInventory() {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <Segmented m={m} />
+          <Link to="/inwentaryzacja/polki" className="btn btn--ghost btn--r12">
+            <Icon name="shelf" size={18} />
+            Po półkach
+          </Link>
           <p className="muted" style={{ fontSize: 14, lineHeight: '20px', textAlign: 'right' }}>
             „Bez zmian” przepisuje poprzedni stan, − / + liczą od niego.
           </p>
@@ -177,6 +182,10 @@ export function LaptopInventory() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 16px' }}>
             <Segmented m={m} small />
+            <Link to="/inwentaryzacja/polki" className="btn btn--ghost">
+              <Icon name="shelf" size={18} />
+              Po półkach
+            </Link>
             <SearchField
               id="li-filtr"
               size="filter"

@@ -61,6 +61,11 @@ export function PhoneInventory() {
           </p>
         </div>
         <Progress m={m} variant="card" />
+        <Link to="/inwentaryzacja/polki" className="catalog-cta" style={{ padding: '10px 14px' }}>
+          <Icon name="shelf" size={20} />
+          <span style={{ flex: 1 }}>Inwentaryzacja po półkach</span>
+          <Icon name="chevronRight" size={18} />
+        </Link>
       </header>
       <main className="phone__main phone__main--loose">
         <p className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>

@@ -110,6 +110,22 @@ W inwentaryzacji przy każdym produkcie są przyciski:
   dodaje pojemność, np. +700 ml). Kolejne kliknięcia zwiększają tę samą partię.
 - **+ Zgrzewka (12 szt.)** — przy produktach w zgrzewkach (mixery Lord of Taste) dodaje pełną zgrzewkę.
 
+- **+ Otwarta butelka** — dodaje otwartą butelkę (data otwarcia: dziś). Przy liczeniu w ml pyta, ile zostało:
+  ¾, ½, ¼ pojemności albo wpisane ml; przy sztukach dodaje 1 otwartą.
+
+## Inwentaryzacja po półkach
+
+`/inwentaryzacja/polki` (przycisk „Po półkach” w inwentaryzacji, „Policz tę półkę” w układzie półki):
+- lista półek (z partii i z układów) ze statusem: nie sprawdzona / sprawdzone N z M / sprawdzona dziś,
+- na półce: podgląd i lista produktów (wg partii na tej półce, a gdy ich brak — wg ułożenia);
+  przy każdym **− / +** albo wpisana ilość oraz **„Zgadza się”**,
+- **kliknięcie butelki** na podglądzie usuwa ją z półki i ze stanu,
+- **„Znaleziony produkt na tej półce”** dodaje produkt na stan i na półkę,
+- **każda zmiana zapisuje się od razu**: stan produktu, partie na tej półce (zmniejszanie zabiera najpierw
+  to, co w FIFO jest na końcu, więc otwarte butelki zostają) i ułożenie butelek w miejscach;
+  w dzienniku wpis „Korekta na półce”,
+- **„Półka sprawdzona”** zamyka półkę i przechodzi do następnej.
+
 ## Zgrzewki
 
 Produkt może mieć **opakowanie zbiorcze** (pole w formularzu produktu, np. 12). Mixery Lord of Taste
