@@ -5,6 +5,7 @@ import { CategoryChips, chipLabel, type CatFilter } from '../../components/Categ
 import { Icon } from '../../components/Icon';
 import { SearchField } from '../../components/SearchField';
 import { TabBar } from '../../components/Shell';
+import { Thumb } from '../../components/Thumb';
 import { QtySmall, Qty, StatusBadge, StatusBand } from '../../components/Status';
 import { catLabel } from '../../lib/catalog';
 import { useStockSearch } from '../../lib/useStockSearch';
@@ -63,11 +64,14 @@ export function PhoneSearch() {
           <article className="card card--18" style={{ display: 'flex', flexDirection: 'column' }}>
             <StatusBand p={single} variant="card" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '18px 18px 10px' }}>
-              <div className="stack-4">
-                <h2 style={{ fontSize: 22, lineHeight: '28px', fontWeight: 700 }}>{single.name}</h2>
-                <span className="code code--lg">
-                  {single.code} · {catLabel(single.cat)}
-                </span>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                {single.image && <Thumb src={single.image} size="lg" />}
+                <div className="stack-4">
+                  <h2 style={{ fontSize: 22, lineHeight: '28px', fontWeight: 700 }}>{single.name}</h2>
+                  <span className="code code--lg">
+                    {single.code} · {catLabel(single.cat)}
+                  </span>
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
                 <Qty n={single.qty} unit={single.unit} size={64} unitSize={18} />
@@ -77,7 +81,17 @@ export function PhoneSearch() {
               </div>
               <Link
                 to={`/produkt/${encodeURIComponent(single.id)}`}
-                style={{ minHeight: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--line)', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}
+                style={{
+                  minHeight: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  borderTop: '1px solid var(--line)',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                }}
               >
                 Szczegóły i historia stanów
                 <Icon name="chevronRight" size={18} />
@@ -93,6 +107,7 @@ export function PhoneSearch() {
               {results.map((p) => (
                 <li key={p.id}>
                   <Link to={`/produkt/${encodeURIComponent(p.id)}`} className="row-link">
+                    {p.image && <Thumb src={p.image} />}
                     <span className="stack-2" style={{ flex: 1 }}>
                       <span className="row-name">{p.name}</span>
                       <span className="code">{p.code}</span>
@@ -122,12 +137,19 @@ export function PhoneSearch() {
           <div className="card card--18 card--dashed empty">
             <h2 className="empty__title">{hasQuery ? `Nie ma „${query.trim()}” w bazie` : 'Magazyn jest pusty'}</h2>
             <p className="empty__text">
-              {hasQuery ? 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.' : 'Dodaj pierwszy produkt — pojawi się w następnej inwentaryzacji.'}
+              {hasQuery
+                ? 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'
+                : 'Dodaj pierwszy produkt — pojawi się w następnej inwentaryzacji.'}
             </p>
             <Link to={`/produkt/nowy${hasQuery ? `?nazwa=${encodeURIComponent(query.trim())}` : ''}`} className="btn btn--primary btn--md">
               <Icon name="plus" size={18} />
               Dodaj produkt
             </Link>
+            {!hasQuery && (
+              <Link to="/katalog" className="btn btn--outline btn--md">
+                Dodaj produkty z folderów (domyślne)
+              </Link>
+            )}
           </div>
         )}
       </main>

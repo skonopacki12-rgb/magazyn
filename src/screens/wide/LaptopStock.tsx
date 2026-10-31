@@ -5,6 +5,8 @@ import { CopyButton, OrderGroups, useOrders } from '../../components/Orders';
 import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
+import { Thumb } from '../../components/Thumb';
+import { Link } from 'react-router-dom';
 import { MIN_LABELS, Stepper } from '../../components/Stepper';
 import { StatusBadge, StatusBand, Qty } from '../../components/Status';
 import { catLabel } from '../../lib/catalog';
@@ -25,6 +27,9 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
       <TopBar variant="laptop">
         <span className="spacer" />
         <span className="subtitle">Stan z inwentaryzacji: {formatDate(state.lastCount)}</span>
+        <Link to="/katalog" className="btn btn--ghost">
+          Dodaj produkty z folderów (domyślne)
+        </Link>
         <button type="button" className="btn btn--primary" onClick={m.openNew}>
           <Icon name="plus" size={18} />
           Dodaj produkt
@@ -67,7 +72,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                   <ul className="flat-rows">
                     {m.results.map((p) => {
                       const on = m.sel?.id === p.id;
-                      const status = p.isOut ? 'brak' : p.isLow ? 'mało' : 'jest';
+                      const status = p.uncounted ? 'jeszcze nie liczony' : p.isOut ? 'brak' : p.isLow ? 'mało' : 'jest';
                       return (
                         <li key={p.id} className={on ? 'is-selected' : undefined}>
                           <button
@@ -78,7 +83,10 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                             onClick={() => m.pick(p.id)}
                             style={on ? { background: 'transparent' } : undefined}
                           >
-                            <span className="t-name">{p.name}</span>
+                            <span className="t-name" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              {p.image && <Thumb src={p.image} size="xs" />}
+                              <span>{p.name}</span>
+                            </span>
                             <span className="code">{p.code}</span>
                             <span style={{ fontSize: 14, lineHeight: '20px', color: 'var(--ink-2)' }}>{catLabel(p.cat)}</span>
                             <span className="qty qty--sm" style={{ justifyContent: 'flex-end' }}>
@@ -118,10 +126,17 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                       : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
                 </p>
                 {emptyKind !== 'cat' ? (
-                  <button type="button" className="btn btn--primary btn--md" onClick={m.openNew}>
-                    <Icon name="plus" size={18} />
-                    Dodaj produkt
-                  </button>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {emptyKind === 'empty' && (
+                      <Link to="/katalog" className="btn btn--primary btn--md">
+                        Dodaj produkty z folderów (domyślne)
+                      </Link>
+                    )}
+                    <button type="button" className={`btn ${emptyKind === 'empty' ? 'btn--outline' : 'btn--primary'} btn--md`} onClick={m.openNew}>
+                      <Icon name="plus" size={18} />
+                      Dodaj produkt
+                    </button>
+                  </div>
                 ) : (
                   <button type="button" className="btn btn--outline btn--md" onClick={() => m.setCat('all')}>
                     Pokaż wszystkie kategorie
@@ -164,16 +179,19 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                   </button>
                 </div>
                 <div className="aside-body">
-                  <div className="stack-4">
-                    <h2 style={{ fontSize: 22, lineHeight: '28px', fontWeight: 700 }}>{m.sel.name}</h2>
-                    <span className="code">
-                      {m.sel.code} · {catLabel(m.sel.cat)}
-                    </span>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                    {m.sel.image && <Thumb src={m.sel.image} size="md" />}
+                    <div className="stack-4">
+                      <h2 style={{ fontSize: 22, lineHeight: '28px', fontWeight: 700 }}>{m.sel.name}</h2>
+                      <span className="code">
+                        {m.sel.code} · {catLabel(m.sel.cat)}
+                      </span>
+                    </div>
                   </div>
                   <StatusBand p={m.sel} variant="rounded" />
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
                     <div className="stack-2">
-                      <span className="subtitle">Stan z {formatDate(state.lastCount)}</span>
+                      <span className="subtitle">{m.sel.uncounted ? 'Jeszcze nie liczony' : `Stan z ${formatDate(state.lastCount)}`}</span>
                       <Qty n={m.sel.qty} unit={m.sel.unit} size={52} unitSize={16} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>

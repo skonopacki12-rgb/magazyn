@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
 import { TabBar } from '../../components/Shell';
+import { Thumb } from '../../components/Thumb';
 
 /** Shown instead of the count list when the warehouse has no products. */
 export function InventoryEmpty() {
@@ -9,10 +10,15 @@ export function InventoryEmpty() {
     <div className="card card--18 card--dashed empty">
       <h2 className="empty__title empty__title--sm">Nie ma czego liczyć</h2>
       <p className="empty__text">Magazyn jest pusty. Dodaj produkty, a pojawią się tutaj do policzenia.</p>
-      <Link to="/produkt/nowy" className="btn btn--primary btn--md">
-        <Icon name="plus" size={18} />
-        Dodaj produkt
-      </Link>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <Link to="/katalog" className="btn btn--primary btn--md">
+          Dodaj produkty z folderów (domyślne)
+        </Link>
+        <Link to="/produkt/nowy" className="btn btn--outline btn--md">
+          <Icon name="plus" size={18} />
+          Dodaj produkt
+        </Link>
+      </div>
     </div>
   );
 }
@@ -70,15 +76,16 @@ export function PhoneInventory() {
             <ul className="rows">
               {g.items.map((p) => (
                 <li key={p.id} className="inv-row">
+                  {p.image && <Thumb src={p.image} size="xs" />}
                   <span className="stack-2" style={{ flex: 1 }}>
                     <label htmlFor={`inw-${p.id}`} className="row-name">
                       {p.name}
                     </label>
                     <span className="code">
-                      {p.code} · poprz. {p.prev}
+                      {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                     </span>
                   </span>
-                  <SameButton p={p} onClick={() => m.same(p)} />
+                  {!p.uncounted && <SameButton p={p} onClick={() => m.same(p)} />}
                   <CountInput id={`inw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
                 </li>
               ))}

@@ -1,5 +1,5 @@
-export type Category = 'syropy' | 'puree' | 'napoje' | 'akcesoria';
-export type Unit = 'szt.' | 'op.' | 'kg';
+export type Category = 'syropy' | 'puree' | 'sosy' | 'napoje' | 'dodatki' | 'akcesoria';
+export type Unit = 'szt.' | 'op.' | 'kg' | 'ml';
 
 export interface HistoryEntry {
   /** ISO date, yyyy-mm-dd */
@@ -20,12 +20,34 @@ export interface Product {
   /** Oldest first. */
   hist: HistoryEntry[];
   archived?: boolean;
+  /** Set for products added from the supplier folders. */
+  brand?: string;
+  /** Pack size, e.g. "1 l", "700 ml", "50 g". */
+  size?: string;
+  /** Image URL (served from /katalog/img/). */
+  image?: string;
+  /** Id of the catalog entry this product came from. */
+  catalogId?: string;
+}
+
+/** One entry of public/katalog/katalog.json. */
+export interface CatalogItem {
+  id: string;
+  code: string;
+  name: string;
+  brand: string;
+  cat: Category;
+  size: string;
+  image: string | null;
+  source: string;
 }
 
 export interface StockStatus {
   isOut: boolean;
   isLow: boolean;
   isOk: boolean;
+  /** Never counted in an inventory yet — stock unknown, so it is not on the order list. */
+  uncounted?: boolean;
   /** qty below min (out-of-stock with min 0 does not count). */
   needs: boolean;
   toOrder: number;

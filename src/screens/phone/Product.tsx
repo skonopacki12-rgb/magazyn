@@ -4,6 +4,7 @@ import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
 import { draftToProduct, emptyDraft, ProductFields, type Draft } from '../../components/ProductForm';
 import { Qty, StatusBand } from '../../components/Status';
+import { Thumb } from '../../components/Thumb';
 import { catLabel } from '../../lib/catalog';
 import { withStatus } from '../../lib/stock';
 import { formatDate } from '../../lib/text';
@@ -16,7 +17,9 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
   const { byId, updateProduct, addProduct, archiveProduct, state } = useStore();
   const stored = isNew ? undefined : byId(id);
   const [draft, setDraft] = useState<Draft>(() =>
-    stored ? { name: stored.name, code: stored.code, cat: stored.cat, unit: stored.unit, min: String(stored.min) } : emptyDraft({ name: params.get('nazwa') ?? '' }),
+    stored
+      ? { name: stored.name, code: stored.code, cat: stored.cat, unit: stored.unit, min: String(stored.min) }
+      : emptyDraft({ name: params.get('nazwa') ?? '' }),
   );
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState(false);
@@ -52,13 +55,32 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
         </Link>
       </header>
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20, padding: '8px 16px 20px' }}>
-        <div className="stack-4">
-          <h1 className="title-md">{isNew ? 'Nowy produkt' : preview!.name}</h1>
-          {preview && (
-            <span className="code code--lg">
-              {preview.code} · {catLabel(preview.cat)}
+        {isNew && (
+          <Link to="/katalog" className="catalog-cta">
+            <Icon name="clipboard" size={22} />
+            <span style={{ flex: 1 }}>
+              Dodaj produkty z folderów (domyślne)
+              <br />
+              <span className="hint">1883 i Lord of Taste — ze zdjęciami i kodami</span>
             </span>
-          )}
+            <Icon name="chevronRight" size={20} />
+          </Link>
+        )}
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+          {preview?.image && <Thumb src={preview.image} size="lg" />}
+          <div className="stack-4">
+            <h1 className="title-md">{isNew ? 'Nowy produkt' : preview!.name}</h1>
+            {preview && (
+              <span className="code code--lg">
+                {preview.code} · {catLabel(preview.cat)}
+              </span>
+            )}
+            {preview?.brand && (
+              <span className="subtitle">
+                {preview.brand} · {preview.size}
+              </span>
+            )}
+          </div>
         </div>
 
         {preview && (
@@ -66,7 +88,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
             <StatusBand p={preview} variant="flush" />
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, padding: '14px 16px 16px' }}>
               <div className="stack-2">
-                <span className="subtitle">Stan z {formatDate(state.lastCount)}</span>
+                <span className="subtitle">{preview.uncounted ? 'Jeszcze nie liczony' : `Stan z ${formatDate(state.lastCount)}`}</span>
                 <Qty n={preview.qty} unit={preview.unit} size={48} unitSize={16} />
               </div>
               <span className="muted" style={{ fontSize: 14, lineHeight: '20px', textAlign: 'right' }}>

@@ -44,7 +44,9 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
       <div className="auth__card card card--18">
         <div className="stack-4">
           <h1 className="title-xl">Magazyn</h1>
-          <p className="subtitle subtitle--lg">{mode === 'login' ? 'Zaloguj się, aby zobaczyć stany magazynowe.' : 'Załóż konto — dostaniesz magazyn z przykładowymi produktami.'}</p>
+          <p className="subtitle subtitle--lg">
+            {mode === 'login' ? 'Zaloguj się, aby zobaczyć stany magazynowe.' : 'Załóż konto — dostaniesz magazyn z przykładowymi produktami.'}
+          </p>
         </div>
 
         <div className="seg" role="group" aria-label="Rodzaj formularza">
@@ -69,7 +71,15 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
             <label htmlFor="a-email" className="field__label">
               E-mail
             </label>
-            <input id="a-email" className="input" type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              id="a-email"
+              className="input"
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="field">
             <label htmlFor="a-pass" className="field__label">
@@ -95,7 +105,14 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (u: User) => void }) {
               <label htmlFor="a-pass2" className="field__label">
                 Powtórz hasło
               </label>
-              <input id="a-pass2" className="input" type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
+              <input
+                id="a-pass2"
+                className="input"
+                type="password"
+                autoComplete="new-password"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+              />
             </div>
           )}
           {error && (

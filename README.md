@@ -66,6 +66,17 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 | GET    | `/api/state`         | magazyn użytkownika `{ data, version }`    |
 | PUT    | `/api/state`         | `{ data, version }` → 409 przy konflikcie  |
 
+## Produkty z folderów
+
+Przycisk **„Dodaj produkty z folderów (domyślne)”** (`/katalog`) otwiera listę 244 produktów
+z folderów 1883 Maison Routin (03/2026) i Lord of Taste (10/2026) — ze zdjęciami, kodami i pojemnościami.
+Można szukać, filtrować po marce i kategorii, zaznaczyć wiele naraz, ustawić minimum i jednostkę
+(szt., op., ml, kg). Dodane produkty mają stan „Niepoliczony”, dopóki nie przejdą inwentaryzacji,
+więc nie trafiają od razu na listę „Do zamówienia”. Produktów już dodanych nie da się dodać drugi raz.
+
+Dane i zdjęcia: `public/katalog/` (zdjęcia wycięte z PDF, `.webp`). Jak odświeżyć z nowych folderów:
+`tools/katalog/README.md`.
+
 ## Ekrany
 
 | Ścieżka           | Telefon (< 768px)            | Tablet (768–1279px)                 | Laptop (≥ 1280px)              |
@@ -74,6 +85,7 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 | `/zamowienia`     | Lista do odhaczenia + kopiuj | Panel zamówień                      | Panel zamówień                 |
 | `/inwentaryzacja` | Lista do liczenia            | Karty z − / +                       | Tabela z filtrem i różnicą     |
 | `/produkt/:id`    | Karta produktu i historia    | Wybrany produkt                     | Wybrany produkt                |
+| `/katalog`        | Lista z folderów             | Lista z folderów (siatka)           | Lista z folderów (siatka)      |
 | `/produkt/nowy`   | Formularz nowego produktu    | Formularz w panelu                  | Formularz w panelu             |
 
 ## Struktura

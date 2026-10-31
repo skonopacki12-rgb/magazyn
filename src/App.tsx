@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { SyncNotice } from './components/Account';
 import { useBreakpoint } from './lib/useBreakpoint';
+import { CatalogScreen } from './screens/CatalogScreen';
 import { PhoneInventory } from './screens/phone/Inventory';
 import { PhoneOrders } from './screens/phone/Orders';
 import { PhoneProduct } from './screens/phone/Product';
@@ -40,6 +41,7 @@ export function App() {
         <Route path="/" element={bp === 'phone' ? <PhoneSearch /> : <WideStock />} />
         <Route path="/zamowienia" element={bp === 'phone' ? <PhoneOrders /> : <WideStock init={{ panel: 'order' }} />} />
         <Route path="/inwentaryzacja" element={bp === 'phone' ? <PhoneInventory /> : bp === 'tablet' ? <TabletInventory /> : <LaptopInventory />} />
+        <Route path="/katalog" element={<CatalogScreen />} />
         <Route path="/produkt/nowy" element={<NewProductRoute />} />
         <Route path="/produkt/:id" element={<ProductRoute />} />
         <Route path="/logowanie" element={<Navigate to="/" replace />} />

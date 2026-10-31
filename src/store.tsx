@@ -3,7 +3,7 @@ import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
 import { todayIso } from './lib/text';
-import type { Product, StockedProduct } from './lib/types';
+import type { CatalogItem, Product, StockedProduct, Unit } from './lib/types';
 
 export interface State {
   products: Product[];
@@ -19,6 +19,7 @@ export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min
 
 type Action =
   | { type: 'add'; id: string; draft: ProductDraft }
+  | { type: 'addMany'; products: Product[] }
   | { type: 'update'; id: string; patch: Partial<ProductDraft> }
   | { type: 'archive'; id: string }
   | { type: 'setCount'; id: string; value: string }
@@ -39,6 +40,8 @@ function reducer(state: State, action: Action): State {
     case 'reset':
       if (action.mode === 'products') return { products: [], lastCount: action.date, counts: {}, ordered: {} };
       return { ...state, products: state.products.map((p) => ({ ...p, qty: 0 })), counts: {}, ordered: {} };
+    case 'addMany':
+      return { ...state, products: [...state.products, ...action.products] };
     case 'add':
       return {
         ...state,
@@ -77,6 +80,8 @@ interface Store {
   byId: (id: string | null | undefined) => StockedProduct | undefined;
   needs: StockedProduct[];
   addProduct: (draft: ProductDraft) => string;
+  /** Adds catalog items as new products (stock 0). Returns how many were added. */
+  addFromCatalog: (items: CatalogItem[], opts: { min: number; unit: Unit }) => number;
   updateProduct: (id: string, patch: Partial<ProductDraft>) => void;
   archiveProduct: (id: string) => void;
   setCount: (id: string, value: string) => void;
@@ -197,6 +202,33 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
         for (let i = 1; taken.has(id); i++) id = `${draft.code || 'NOWY'}-${i}`;
         dispatch({ type: 'add', id, draft: { ...draft, code: draft.code || id } });
         return id;
+      },
+      addFromCatalog: (items, { min, unit }) => {
+        const taken = new Set(state.products.map((p) => p.id));
+        const have = new Set(state.products.filter((p) => !p.archived && p.catalogId).map((p) => p.catalogId));
+        const fresh: Product[] = [];
+        for (const it of items) {
+          if (have.has(it.id)) continue;
+          let id = it.id;
+          for (let i = 2; taken.has(id); i++) id = `${it.id}-${i}`;
+          taken.add(id);
+          fresh.push({
+            id,
+            code: it.code,
+            name: it.name,
+            cat: it.cat,
+            unit,
+            min,
+            qty: 0,
+            hist: [],
+            brand: it.brand,
+            size: it.size,
+            image: it.image ?? undefined,
+            catalogId: it.id,
+          });
+        }
+        if (fresh.length) dispatch({ type: 'addMany', products: fresh });
+        return fresh.length;
       },
       updateProduct: (id, patch) => dispatch({ type: 'update', id, patch }),
       archiveProduct: (id) => dispatch({ type: 'archive', id }),

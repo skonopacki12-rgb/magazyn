@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../lib/catalog';
-import type { Category, StockedProduct } from '../lib/types';
+import type { Category } from '../lib/types';
 
 export type CatFilter = Category | 'all';
 
@@ -7,7 +7,7 @@ interface Props {
   value: CatFilter;
   onChange: (c: CatFilter) => void;
   /** Products matching the current search — chip counts are computed from these. */
-  matched: StockedProduct[];
+  matched: ReadonlyArray<{ cat: Category }>;
   layout: 'scroll' | 'wrap';
   /** Use the long label ("Napoje gazowane") instead of the short one. */
   longLabels?: boolean;

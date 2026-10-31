@@ -56,9 +56,7 @@ export function ResetDialog({ open, onClose }: { open: boolean; onClose: () => v
             <input type="radio" name="reset-mode" checked={mode === 'products'} onChange={() => setMode('products')} />
             <span className="stack-2">
               <span className="row-name">Usuń wszystkie produkty</span>
-              <span className="hint">
-                Pusty magazyn — zaczynasz od zera. Zniknie {countProducts(products.length)} z historią stanów.
-              </span>
+              <span className="hint">Pusty magazyn — zaczynasz od zera. Zniknie {countProducts(products.length)} z historią stanów.</span>
             </span>
           </label>
           <label className={`choice__opt${mode === 'stock' ? ' is-on' : ''}`}>
@@ -74,7 +72,14 @@ export function ResetDialog({ open, onClose }: { open: boolean; onClose: () => v
           <label htmlFor="reset-word" className="field__label">
             Wpisz {CONFIRM_WORD}, aby potwierdzić
           </label>
-          <input id="reset-word" className="input input--mono input--upper" type="text" autoComplete="off" value={word} onChange={(e) => setWord(e.target.value)} />
+          <input
+            id="reset-word"
+            className="input input--mono input--upper"
+            type="text"
+            autoComplete="off"
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+          />
         </div>
 
         <div className="dialog__actions">

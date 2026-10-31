@@ -5,6 +5,8 @@ import { CopyButton, OrderGroups, useOrders } from '../../components/Orders';
 import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
+import { Thumb } from '../../components/Thumb';
+import { Link } from 'react-router-dom';
 import { MIN_LABELS, Stepper } from '../../components/Stepper';
 import { Qty, QtySmall, StatusBadge, StatusBand } from '../../components/Status';
 import { catLabel } from '../../lib/catalog';
@@ -25,6 +27,9 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
       <TopBar variant="tablet">
         <span className="spacer" />
         <span className="subtitle">Stan z inwentaryzacji: {formatDate(state.lastCount)}</span>
+        <Link to="/katalog" className="btn btn--ghost btn--r12">
+          Z folderów
+        </Link>
         <button type="button" className="btn btn--ghost btn--r12" onClick={m.openNew}>
           <Icon name="plus" size={18} />
           Dodaj produkt
@@ -67,6 +72,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
                   return (
                     <li key={p.id} className={on ? 'is-selected' : undefined}>
                       <button type="button" className="row-link" aria-current={on ? 'true' : undefined} onClick={() => m.pick(p.id)}>
+                        {p.image && <Thumb src={p.image} />}
                         <span className="stack-2" style={{ flex: 1 }}>
                           <span className="row-name">{p.name}</span>
                           <span className="code">{p.code}</span>
@@ -88,11 +94,17 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
           {m.sel && (
             <div className="md__panel">
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-                <div className="stack-4" style={{ gap: 6 }}>
+                {m.sel.image && <Thumb src={m.sel.image} size="lg" />}
+                <div className="stack-4" style={{ gap: 6, flex: 1 }}>
                   <h2 className="title-lg">{m.sel.name}</h2>
                   <span className="code" style={{ fontSize: 15, lineHeight: '20px' }}>
                     {m.sel.code} · {catLabel(m.sel.cat)}
                   </span>
+                  {m.sel.brand && (
+                    <span className="subtitle subtitle--lg">
+                      {m.sel.brand} · {m.sel.size}
+                    </span>
+                  )}
                 </div>
                 <button type="button" className="btn btn--ghost btn--r12" onClick={m.openEdit}>
                   Edytuj dane
@@ -102,7 +114,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
               <div className="stat-grid">
                 <div className="stat">
                   <span className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
-                    Stan z {formatDate(state.lastCount)}
+                    {m.sel.uncounted ? 'Jeszcze nie liczony' : `Stan z ${formatDate(state.lastCount)}`}
                   </span>
                   <Qty n={m.sel.qty} unit={m.sel.unit} size={72} unitSize={20} />
                 </div>
@@ -188,6 +200,11 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
                       ? 'Pasujące produkty są w innych kategoriach.'
                       : 'Sprawdź pisownię albo kod. Jeśli to nowy produkt, dodaj go — pojawi się w następnej inwentaryzacji.'}
               </p>
+              {emptyKind === 'empty' && (
+                <Link to="/katalog" className="btn btn--outline btn--lg" style={{ padding: '0 20px' }}>
+                  Dodaj produkty z folderów (domyślne)
+                </Link>
+              )}
               {(emptyKind === 'none' || emptyKind === 'empty') && (
                 <button type="button" className="btn btn--primary btn--lg" style={{ padding: '0 20px' }} onClick={m.openNew}>
                   <Icon name="plus" size={18} />

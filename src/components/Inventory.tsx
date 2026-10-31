@@ -28,7 +28,7 @@ export function useInventory() {
       products.map((p) => {
         const val = counts[p.id] ?? '';
         const counted = val !== '';
-        return { ...p, prev: p.qty, val, counted, isSame: counted && Number(val) === p.qty, diff: counted ? Number(val) - p.qty : null };
+        return { ...p, prev: p.qty, val, counted, isSame: counted && Number(val) === p.qty, diff: counted && !p.uncounted ? Number(val) - p.qty : null };
       }),
     [products, counts],
   );

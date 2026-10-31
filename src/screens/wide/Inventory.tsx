@@ -3,6 +3,7 @@ import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, Segmented, useInventory } from '../../components/Inventory';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
+import { Thumb } from '../../components/Thumb';
 import { formatDiff, matches, tokenize } from '../../lib/text';
 import { FinishAction, InventoryEmpty } from '../phone/Inventory';
 
@@ -47,13 +48,16 @@ export function TabletInventory() {
             <ul className="inv-grid">
               {g.items.map((p) => (
                 <li key={p.id} className={`inv-card${p.counted ? ' is-filled' : ''}`}>
-                  <div className="stack-2">
-                    <label htmlFor={`tinw-${p.id}`} className="row-name">
-                      {p.name}
-                    </label>
-                    <span className="code">
-                      {p.code} · poprz. {p.prev}
-                    </span>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    {p.image && <Thumb src={p.image} size="sm" />}
+                    <div className="stack-2">
+                      <label htmlFor={`tinw-${p.id}`} className="row-name">
+                        {p.name}
+                      </label>
+                      <span className="code">
+                        {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
+                      </span>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button type="button" className="stepper__btn" aria-label={`Odejmij 1: ${p.name}`} onClick={() => m.step(p, -1)}>
@@ -64,7 +68,7 @@ export function TabletInventory() {
                       <Icon name="plus" size={20} />
                     </button>
                     <span className="spacer" />
-                    <SameButton p={p} variant="tablet" onClick={() => m.same(p)} />
+                    {!p.uncounted && <SameButton p={p} variant="tablet" onClick={() => m.same(p)} />}
                   </div>
                 </li>
               ))}
@@ -175,19 +179,20 @@ export function LaptopInventory() {
                   <ul>
                     {g.items.map((p) => (
                       <li key={p.id} className="trow trow--inv inv-line">
-                        <label htmlFor={`linw-${p.id}`} className="t-name">
-                          {p.name}
+                        <label htmlFor={`linw-${p.id}`} className="t-name" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {p.image && <Thumb src={p.image} size="xs" />}
+                          <span>{p.name}</span>
                         </label>
                         <span className="code">{p.code}</span>
                         <span className="t-num t-right" style={{ color: 'var(--ink-2)' }}>
-                          {p.prev} {p.unit}
+                          {p.uncounted ? '—' : `${p.prev} ${p.unit}`}
                         </span>
                         <span style={{ display: 'flex', justifyContent: 'center' }}>
                           <CountInput id={`linw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
                         </span>
                         <span className={`t-num t-right ${p.diff ? 'is-strong' : 'is-quiet'}`}>{p.diff === null ? '—' : formatDiff(p.diff)}</span>
                         <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <SameButton p={p} variant="laptop" onClick={() => m.same(p)} />
+                          {!p.uncounted && <SameButton p={p} variant="laptop" onClick={() => m.same(p)} />}
                         </span>
                       </li>
                     ))}

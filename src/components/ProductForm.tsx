@@ -32,7 +32,14 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
       <label htmlFor={id('nazwa')} className="field__label">
         Nazwa
       </label>
-      <input id={id('nazwa')} className="input" type="text" placeholder={placeholders ? 'np. Syrop Pistacja 0,7 l' : undefined} value={draft.name} onChange={(e) => set('name', e.target.value)} />
+      <input
+        id={id('nazwa')}
+        className="input"
+        type="text"
+        placeholder={placeholders ? 'np. Syrop Pistacja 0,7 l' : undefined}
+        value={draft.name}
+        onChange={(e) => set('name', e.target.value)}
+      />
     </div>
   );
   const code = (

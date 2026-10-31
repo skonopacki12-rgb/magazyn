@@ -1,13 +1,13 @@
 import { bandText } from '../lib/stock';
 import type { StockStatus, StockedProduct } from '../lib/types';
 
-export function statusClass(s: Pick<StockStatus, 'isOut' | 'isLow'>): string {
-  return s.isOut ? 'is-out' : s.isLow ? 'is-low' : 'is-ok';
+export function statusClass(s: Pick<StockStatus, 'isOut' | 'isLow' | 'uncounted'>): string {
+  return s.uncounted ? 'is-new' : s.isOut ? 'is-out' : s.isLow ? 'is-low' : 'is-ok';
 }
 
 /** Small "Jest / Mało / Brak" pill. */
-export function StatusBadge({ p, small }: { p: Pick<StockStatus, 'isOut' | 'isLow'>; small?: boolean }) {
-  const label = p.isOut ? 'Brak' : p.isLow ? 'Mało' : 'Jest';
+export function StatusBadge({ p, small }: { p: Pick<StockStatus, 'isOut' | 'isLow' | 'uncounted'>; small?: boolean }) {
+  const label = p.uncounted ? 'Nowy' : p.isOut ? 'Brak' : p.isLow ? 'Mało' : 'Jest';
   return <span className={`badge ${statusClass(p)}${small ? ' badge--sm' : ''}`}>{label}</span>;
 }
 
