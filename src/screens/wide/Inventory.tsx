@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { bottleQty } from '../../lib/volume';
 import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
@@ -96,9 +97,8 @@ export function TabletInventory() {
                     <button
                       type="button"
                       className="stepper__btn"
-                      aria-label={`Odejmij 1: ${p.name}`}
-                      disabled={p.countLots.length > 0}
-                      onClick={() => m.step(p, -1)}
+                      aria-label={`Odejmij ${bottleQty(p) > 1 ? 'butelkę' : '1'}: ${p.name}`}
+                                            onClick={() => m.step(p, -1)}
                     >
                       <Icon name="minus" size={20} />
                     </button>
@@ -106,9 +106,8 @@ export function TabletInventory() {
                     <button
                       type="button"
                       className="stepper__btn"
-                      aria-label={`Dodaj 1: ${p.name}`}
-                      disabled={p.countLots.length > 0}
-                      onClick={() => m.step(p, 1)}
+                      aria-label={`Dodaj ${bottleQty(p) > 1 ? 'butelkę' : '1'}: ${p.name}`}
+                                            onClick={() => m.step(p, 1)}
                     >
                       <Icon name="plus" size={20} />
                     </button>
@@ -123,6 +122,7 @@ export function TabletInventory() {
                       unit={p.unit}
                       packSize={packSizeOf(p)}
                       count={Number(p.val) || 0}
+                      bottle={bottleQty(p)}
                       onChange={(l) => m.setLots(p, l)}
                     />
                   )}
@@ -289,6 +289,7 @@ export function LaptopInventory() {
                               unit={p.unit}
                               packSize={packSizeOf(p)}
                               count={Number(p.val) || 0}
+                              bottle={bottleQty(p)}
                               onChange={(l) => m.setLots(p, l)}
                             />
                           </div>

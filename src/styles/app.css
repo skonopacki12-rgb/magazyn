@@ -2950,3 +2950,15 @@ button.rack__slot:hover {
 .sync--offline {
   background: #3a2300;
 }
+
+/* Amounts in ml need room for 4–5 digits (e.g. 10008). */
+.num-input.num-input--wide,
+.inv-card .num-input.num-input--wide {
+  width: 104px;
+}
+.inv-line .num-input.num-input--wide {
+  width: 104px;
+}
+.lot__qty .stepper__input {
+  width: 72px;
+}

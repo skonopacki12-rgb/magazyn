@@ -25,7 +25,13 @@ export interface InvItem extends StockedProduct {
  * session; we keep a snapshot so the screen keeps showing what was just saved.
  */
 export function useInventory() {
-  const { products, state, setCount, setLots, finishInventory } = useStore();
+  const { products, state, setCount, setLots: storeLots, finishInventory } = useStore();
+  /** Closed bottles of products counted in ml are always full: their lots hold whole bottles. */
+  const setLots = (id: string, lots: Lot[]) => {
+    const p = products.find((x) => x.id === id);
+    const b = p ? bottleQty(p) : 1;
+    storeLots(id, b > 1 ? lots.map((l) => (l.open || l.pack || l.qty % b === 0 ? l : { ...l, qty: Math.max(1, Math.ceil(l.qty / b)) * b })) : lots);
+  };
   const [snapshot, setSnapshot] = useState<Record<string, string> | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'todo'>('all');
@@ -129,10 +135,46 @@ export function useInventory() {
         else n.add(p.id);
         return n;
       }),
-    step: (p: InvItem, d: number) => set(p, String(Math.max(0, (p.counted ? Number(p.val) : p.prev) + d))),
+    /**
+     * − / +: one bottle (a full one in ml for products counted in ml). With batches, + adds a closed
+     * full bottle and − takes one off (closed bottles first, then the last opened one).
+     */
+    step: (p: InvItem, d: number) => {
+      const b = bottleQty(p);
+      if (!p.countLots.length) return set(p, String(Math.max(0, (p.counted ? Number(p.val) : p.prev) + d * b)));
+      if (snapshot) setSnapshot(null);
+      let lots = [...p.countLots];
+      if (d > 0) {
+        const i = lots.findIndex((l) => !l.open && !l.pack);
+        if (i >= 0) lots[i] = { ...lots[i], qty: lots[i].qty + b };
+        else lots.push(newLot({ qty: b, open: false, shelf: lots[lots.length - 1]?.shelf }));
+      } else {
+        let i = -1;
+        for (let j = lots.length - 1; j >= 0; j--) if (!lots[j].open && !lots[j].pack) { i = j; break; }
+        if (i < 0) i = lots.length - 1;
+        const l = lots[i];
+        const take = l.open || l.pack ? (l.pack ? 1 : l.qty) : Math.min(b, l.qty);
+        lots = l.qty - take > 0 ? lots.map((x, j) => (j === i ? { ...x, qty: x.qty - take } : x)) : lots.filter((_, j) => j !== i);
+      }
+      setLots(p.id, lots);
+    },
+    /**
+     * Saves the inventory. Products not counted are treated as missing: those that had stock are
+     * saved as 0; products never counted and with no stock stay "nieliczone" (no order alerts).
+     */
     finish: () => {
-      if (!complete) return;
-      setSnapshot(Object.fromEntries(items.map((p) => [p.id, p.val])));
+      const rest = items.filter((p) => !p.counted);
+      const zero = rest.filter((p) => !p.uncounted);
+      if (rest.length) {
+        const msg =
+          `Niepoliczone: ${rest.length}. ` +
+          (zero.length ? `${zero.length} z nich miało stan — zapiszę je jako 0 (brak). ` : '') +
+          (rest.length - zero.length ? `${rest.length - zero.length} bez stanu zostanie jako nieliczone. ` : '') +
+          'Zakończyć inwentaryzację?';
+        if (!window.confirm(msg)) return;
+        for (const p of zero) setCount(p.id, '0');
+      }
+      setSnapshot(Object.fromEntries(items.map((p) => [p.id, zero.some((z) => z.id === p.id) ? '0' : p.val])));
       finishInventory();
     },
   };
@@ -195,7 +237,7 @@ export function CountInput({ id, p, onChange, style }: { id: string; p: InvItem;
   return (
     <input
       id={id}
-      className={`num-input${p.counted ? ' is-filled' : ''}${fromLots ? ' is-sum' : ''}`}
+      className={`num-input${p.counted ? ' is-filled' : ''}${fromLots ? ' is-sum' : ''}${p.unit === 'ml' ? ' num-input--wide' : ''}`}
       type="text"
       inputMode="numeric"
       autoComplete="off"

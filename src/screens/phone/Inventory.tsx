@@ -1,4 +1,5 @@
 import { packSizeOf } from '../../lib/pack';
+import { bottleQty } from '../../lib/volume';
 import { useState } from 'react';
 import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { Link } from 'react-router-dom';
@@ -49,9 +50,14 @@ export function FinishAction({ m, size, savedHref, savedLabel }: { m: InventoryM
       </button>
     );
   return (
-    <button type="button" className={`${cls} btn--disabled`} disabled>
-      Zostało {m.left} do policzenia
-    </button>
+    <span style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'stretch' }}>
+      <button type="button" className={`${cls} btn--primary`} onClick={m.finish} disabled={!m.counted}>
+        Zakończ i zapisz
+      </button>
+      <span className="hint" style={{ textAlign: 'center' }}>
+        Niepoliczone: {m.left} — nie ma ich na stanie
+      </span>
+    </span>
   );
 }
 
@@ -128,6 +134,7 @@ export function PhoneInventory() {
                       unit={p.unit}
                       packSize={packSizeOf(p)}
                       count={Number(p.val) || 0}
+                      bottle={bottleQty(p)}
                       onChange={(l) => m.setLots(p, l)}
                     />
                   )}

@@ -124,6 +124,7 @@ export function LotEditor({
   onChange,
   packSize,
   count = 0,
+  bottle = 1,
 }: {
   id: string;
   lots: Lot[];
@@ -133,7 +134,11 @@ export function LotEditor({
   packSize?: number;
   /** Number typed in the count field — used by "Rozłóż na zgrzewki" when there are no lots yet. */
   count?: number;
+  /** Content of one bottle in stock units (1000 for a 1 l bottle counted in ml). Closed bottles are counted whole. */
+  bottle?: number;
 }) {
+  const inBottles = (l: Lot) => bottle > 1 && !l.open && !l.pack;
+  const nBottles = (l: Lot) => Math.max(1, Math.ceil(l.qty / bottle));
   const set = (lotId: string, patch: Partial<Lot>) => onChange(lots.map((l) => (l.id === lotId ? { ...l, ...patch } : l)));
   const total = lots.reduce((s, l) => s + l.qty, 0);
   let caseNo = 0;
@@ -180,7 +185,12 @@ export function LotEditor({
             ) : (
               <div className="lot__row">
                 <div className="lot__qty">
-                  <button type="button" className="stepper__btn" aria-label="Mniej" onClick={() => set(l.id, { qty: Math.max(1, l.qty - 1) })}>
+                  <button
+                    type="button"
+                    className="stepper__btn"
+                    aria-label={inBottles(l) ? 'Jedna butelka mniej' : 'Mniej'}
+                    onClick={() => set(l.id, { qty: inBottles(l) ? Math.max(1, nBottles(l) - 1) * bottle : Math.max(1, l.qty - 1) })}
+                  >
                     <Icon name="minus" size={16} />
                   </button>
                   <label htmlFor={`${p}-q`} className="sr-only">
@@ -191,16 +201,37 @@ export function LotEditor({
                     className="stepper__input"
                     type="text"
                     inputMode="numeric"
-                    value={l.qty}
-                    onChange={(e) => set(l.id, { qty: Math.max(0, Number(digitsOnly(e.target.value)) || 0) })}
+                    value={inBottles(l) ? nBottles(l) : l.qty}
+                    onChange={(e) => {
+                      const n = Math.max(0, Number(digitsOnly(e.target.value)) || 0);
+                      set(l.id, { qty: inBottles(l) ? n * bottle : n });
+                    }}
                   />
-                  <button type="button" className="stepper__btn" aria-label="Więcej" onClick={() => set(l.id, { qty: l.qty + 1 })}>
+                  <button
+                    type="button"
+                    className="stepper__btn"
+                    aria-label={inBottles(l) ? 'Jedna butelka więcej' : 'Więcej'}
+                    onClick={() => set(l.id, { qty: inBottles(l) ? (nBottles(l) + 1) * bottle : l.qty + 1 })}
+                  >
                     <Icon name="plus" size={16} />
                   </button>
-                  <span className="stepper__unit">{unit}</span>
+                  <span className="stepper__unit">
+                    {inBottles(l) ? (
+                      <>
+                        but. · {nBottles(l) * bottle} {unit}
+                        {l.qty % bottle !== 0 && (
+                          <span className="hint" style={{ display: 'block', color: '#8a5a00' }}>
+                            było {l.qty} {unit} — zamknięta liczy się jako pełna
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      unit
+                    )}
+                  </span>
                 </div>
                 <div className="seg seg--xs" role="group" aria-label={`Partia ${i + 1}: otwarta czy zamknięta`}>
-                  <button type="button" className="seg__btn" aria-pressed={!l.open} onClick={() => set(l.id, { open: false, openedAt: undefined })}>
+                  <button type="button" className="seg__btn" aria-pressed={!l.open} onClick={() => set(l.id, { open: false, openedAt: undefined, ...(bottle > 1 && !l.pack ? { qty: nBottles(l) * bottle } : {}) })}>
                     Zamknięta
                   </button>
                   <button
@@ -278,7 +309,7 @@ export function LotEditor({
             )}
           </>
         )}
-        <button type="button" className="btn btn--ghost" onClick={() => onChange([...lots, newLot({ qty: lots.length ? 1 : Math.max(1, total || count) })])}>
+        <button type="button" className="btn btn--ghost" onClick={() => onChange([...lots, newLot({ qty: lots.length ? bottle : Math.max(1, total || count) })])}>
           <Icon name="plus" size={16} />
           {packSize ? (lots.length ? 'Dodaj luzem' : 'Rozpisz bez zgrzewek') : lots.length ? 'Dodaj partię' : 'Rozpisz na partie'}
         </button>
