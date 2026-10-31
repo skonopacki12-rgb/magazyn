@@ -24,6 +24,13 @@ export function TabBar({ toOrderCount }: { toOrderCount?: number }) {
         <Icon name="clipboard" />
         <span>Inwentaryzacja</span>
       </NavLink>
+      <NavLink to="/szkolenie" className="tabbar__item">
+        <span className="tabbar__icon">
+          <Icon name="glass" />
+          {state.training && <span className="count-dot count-dot--live" aria-label="w trakcie" />}
+        </span>
+        <span>Szkolenie</span>
+      </NavLink>
     </nav>
   );
 }
@@ -32,6 +39,7 @@ export function TabBar({ toOrderCount }: { toOrderCount?: number }) {
 export function TopBar({ variant, children }: { variant: 'tablet' | 'laptop'; children?: React.ReactNode }) {
   const { pathname } = useLocation();
   const onInventory = pathname.startsWith('/inwentaryzacja');
+  const training = useStore().state.training;
   const iconSize = variant === 'tablet' ? 20 : 18;
   return (
     <header className={`topbar topbar--${variant}`}>
@@ -44,6 +52,11 @@ export function TopBar({ variant, children }: { variant: 'tablet' | 'laptop'; ch
         <Link to="/inwentaryzacja" className="topbar__link" aria-current={onInventory ? 'page' : undefined}>
           <Icon name="clipboard" size={iconSize} />
           Inwentaryzacja
+        </Link>
+        <Link to="/szkolenie" className="topbar__link">
+          <Icon name="glass" size={iconSize} />
+          Szkolenie
+          {training && <span className="live-pill">w trakcie</span>}
         </Link>
       </nav>
       {children ?? <span className="spacer" />}

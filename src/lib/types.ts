@@ -16,6 +16,8 @@ export interface Lot {
   openedAt?: string;
   /** ISO best-before date. */
   expiresAt?: string;
+  /** Shelf / location label, e.g. "A2" or "Bar – lodówka". */
+  shelf?: string;
 }
 
 export interface Product {

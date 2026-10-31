@@ -32,6 +32,14 @@ export function fifoSort(lots: Lot[]): Lot[] {
   });
 }
 
+/** Every shelf label used in current stock or the inventory in progress, sorted. */
+export function allShelves(products: Product[], extra: Lot[][] = []): string[] {
+  const set = new Set<string>();
+  for (const p of products) for (const l of p.lots ?? []) if (l.shelf) set.add(l.shelf);
+  for (const lots of extra) for (const l of lots) if (l.shelf) set.add(l.shelf);
+  return [...set].sort((a, b) => a.localeCompare(b, 'pl', { numeric: true }));
+}
+
 export function newLot(partial?: Partial<Lot>): Lot {
   return { id: Math.random().toString(36).slice(2, 10), qty: 1, open: false, ...partial };
 }

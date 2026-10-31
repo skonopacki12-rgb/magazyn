@@ -2033,3 +2033,185 @@ button.trow:hover {
 .inv-line > .trow {
   min-height: 56px;
 }
+
+.shelf-tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.shelf-tag.is-none {
+  border-style: dashed;
+  border-color: var(--dashed);
+  color: var(--muted);
+  font-family: var(--sans);
+  font-weight: 500;
+}
+
+/* ───────── Training (Szkolenie) ───────── */
+.tabbar {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tabbar__item {
+  font-size: 11px;
+  text-align: center;
+}
+.count-dot--live {
+  min-width: 12px;
+  height: 12px;
+  top: -3px;
+  right: -6px;
+  padding: 0;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.live-pill {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+}
+.textarea {
+  height: auto;
+  min-height: 150px;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 22px;
+  resize: vertical;
+}
+.steps {
+  display: flex;
+  gap: 8px;
+}
+.steps li {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--track);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+.steps li.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+.warn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #fff6e0;
+  border-color: var(--low-bg);
+  font-size: 14px;
+  line-height: 20px;
+}
+.shelf-tag--lg {
+  padding: 4px 12px;
+  font-size: 16px;
+  line-height: 22px;
+  background: var(--surface);
+}
+.pick__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.pick__main > input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.pick.is-done .pick__name {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.pick__qty {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.pick__alt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 12px 50px;
+}
+.pick__alt .select {
+  height: 40px;
+  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+}
+.return-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ret {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+.ret__seg {
+  flex-wrap: wrap;
+}
+.ret__seg .seg__btn {
+  flex: 1 1 auto;
+}
+.ret__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 20px;
+  align-items: start;
+}
+.ret__grid .input {
+  height: 44px;
+}
+.ret__moved {
+  color: var(--accent);
+  font-weight: 600;
+}
+.ret__remove {
+  color: var(--out-bg);
+  font-weight: 600;
+}
+.ret__check {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ret__check input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.move {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 8px 14px;
+}

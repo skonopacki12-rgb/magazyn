@@ -90,6 +90,7 @@ function Group({
                   <span className="hint">
                     {lot.qty} {p.unit} · {showOpened ? openedText(lot) : (expiryText(lot) ?? '')}
                     {showOpened && lot.expiresAt ? ` · ${expiryText(lot)}` : ''}
+                    {lot.shelf ? ` · półka ${lot.shelf}` : ''}
                   </span>
                 </span>
                 {lot.expiresAt && !showOpened && (

@@ -89,6 +89,19 @@ Po zakończeniu inwentaryzacji:
 - ekran **Terminy i otwarte** (`/terminy`, baner na liście i menu konta) zbiera partie po terminie,
   z terminem ≤ 14 dni i wszystkie otwarte butelki.
 
+## Półki i szkolenie
+
+Każda partia ma pole **Półka** (np. A2) — wpisujesz je w inwentaryzacji; aplikacja podpowiada półki już używane.
+
+**Szkolenie** (`/szkolenie`, zakładka w menu):
+1. Wklejasz listę kodów (każdy w nowej linii albo po przecinku/spacji; ten sam kod 2× = 2 szt.).
+2. Aplikacja układa listę do zebrania **według półek** i dla każdego produktu podsuwa partię FIFO:
+   najpierw otwartą, potem z najkrótszą datą (przeterminowane na końcu). Można wybrać inną partię.
+   Nieznane kody i produkty bez stanu są wypisane osobno. Sesja zapisuje się w chmurze.
+3. **Koniec szkolenia** — dla każdej pozycji: *Odłóż* (na półkę, z której wzięto, albo inną; zejście —
+   ile zużyto; zaznaczenie „otwarta”), *Zużyte do końca*, *Wyrzuć — zepsute* albo *Inne* (z powodem).
+4. **Zatwierdź** aktualizuje stany i partie, a ruchy trafiają do dziennika „Ostatnie ruchy”.
+
 ## Ekrany
 
 | Ścieżka           | Telefon (< 768px)            | Tablet (768–1279px)                 | Laptop (≥ 1280px)              |

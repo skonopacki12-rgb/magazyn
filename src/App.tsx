@@ -1,8 +1,12 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { SyncNotice } from './components/Account';
+import { ShelfOptions } from './components/Lots';
+import { allShelves } from './lib/fifo';
+import { useStore } from './store';
 import { useBreakpoint } from './lib/useBreakpoint';
 import { CatalogScreen } from './screens/CatalogScreen';
 import { ExpiryScreen } from './screens/ExpiryScreen';
+import { TrainingScreen } from './screens/TrainingScreen';
 import { PhoneInventory } from './screens/phone/Inventory';
 import { PhoneOrders } from './screens/phone/Orders';
 import { PhoneProduct } from './screens/phone/Product';
@@ -36,6 +40,8 @@ function NewProductRoute() {
 
 export function App() {
   const bp = useBreakpoint();
+  const { products, state } = useStore();
+  const shelves = allShelves(products, Object.values(state.countLots ?? {}));
   return (
     <>
       <Routes>
@@ -44,6 +50,7 @@ export function App() {
         <Route path="/inwentaryzacja" element={bp === 'phone' ? <PhoneInventory /> : bp === 'tablet' ? <TabletInventory /> : <LaptopInventory />} />
         <Route path="/katalog" element={<CatalogScreen />} />
         <Route path="/terminy" element={<ExpiryScreen />} />
+        <Route path="/szkolenie" element={<TrainingScreen />} />
         <Route path="/produkt/nowy" element={<NewProductRoute />} />
         <Route path="/produkt/:id" element={<ProductRoute />} />
         <Route path="/logowanie" element={<Navigate to="/" replace />} />
@@ -51,6 +58,7 @@ export function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <SyncNotice />
+      <ShelfOptions shelves={shelves} />
     </>
   );
 }

@@ -26,6 +26,12 @@ const PATHS = {
   chevronRight: <path d="M9 6l6 6-6 6" />,
   chevronLeft: <path d="M15 6l-6 6 6 6" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  glass: (
+    <>
+      <path d="M5 4h14l-7 8z" />
+      <path d="M12 12v7M8 20h8" />
+    </>
+  ),
   clock: (
     <>
       <circle cx="12" cy="12" r="8.5" />

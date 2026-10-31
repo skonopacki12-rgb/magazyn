@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
+import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
 import { todayIso } from './lib/text';
 import type { CatalogItem, Lot, Product, StockedProduct, Unit } from './lib/types';
 
@@ -15,7 +16,13 @@ export interface State {
   ordered: Record<string, boolean>;
   /** In-progress inventory FIFO batches: product id → lots. When present, their sum is the count. */
   countLots?: Record<string, Lot[]>;
+  /** Training session in progress (products taken off the shelves). */
+  training?: Training | null;
+  /** Stock movements outside inventories (newest first, capped). */
+  log?: Move[];
 }
+
+const LOG_LIMIT = 300;
 
 export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'>;
 
@@ -26,6 +33,8 @@ type Action =
   | { type: 'archive'; id: string }
   | { type: 'setCount'; id: string; value: string }
   | { type: 'setLots'; id: string; lots: Lot[] }
+  | { type: 'setTraining'; training: Training | null }
+  | { type: 'finishTraining'; date: string }
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
   | { type: 'replace'; state: State }
@@ -41,8 +50,8 @@ function reducer(state: State, action: Action): State {
     case 'replace':
       return action.state;
     case 'reset':
-      if (action.mode === 'products') return { products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {} };
-      return { ...state, products: state.products.map((p) => ({ ...p, qty: 0, lots: [] })), counts: {}, ordered: {}, countLots: {} };
+      if (action.mode === 'products') return { ...state, products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {}, training: null };
+      return { ...state, products: state.products.map((p) => ({ ...p, qty: 0, lots: [] })), counts: {}, ordered: {}, countLots: {}, training: null };
     case 'addMany':
       return { ...state, products: [...state.products, ...action.products] };
     case 'add':
@@ -64,6 +73,13 @@ function reducer(state: State, action: Action): State {
       // Typing a number by hand drops the batch breakdown for that product.
       const { [action.id]: _drop, ...rest } = state.countLots ?? {};
       return { ...state, counts: { ...state.counts, [action.id]: action.value }, countLots: rest };
+    }
+    case 'setTraining':
+      return { ...state, training: action.training };
+    case 'finishTraining': {
+      if (!state.training) return state;
+      const { products, moves } = applyTraining(state.products, state.training, action.date);
+      return { ...state, products, training: null, log: [...moves, ...(state.log ?? [])].slice(0, LOG_LIMIT) };
     }
     case 'setLots': {
       const lots = action.lots;
@@ -99,6 +115,9 @@ interface Store {
   archiveProduct: (id: string) => void;
   setCount: (id: string, value: string) => void;
   setLots: (id: string, lots: Lot[]) => void;
+  startTraining: (input: string) => Training;
+  updateTraining: (training: Training | null) => void;
+  finishTraining: () => void;
   finishInventory: () => void;
   resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
@@ -248,6 +267,13 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       archiveProduct: (id) => dispatch({ type: 'archive', id }),
       setCount: (id, value) => dispatch({ type: 'setCount', id, value }),
       setLots: (id, lots) => dispatch({ type: 'setLots', id, lots }),
+      startTraining: (input) => {
+        const t = buildTraining(products, input);
+        dispatch({ type: 'setTraining', training: t });
+        return t;
+      },
+      updateTraining: (training) => dispatch({ type: 'setTraining', training }),
+      finishTraining: () => dispatch({ type: 'finishTraining', date: todayIso() }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
       resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),

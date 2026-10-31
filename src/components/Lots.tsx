@@ -20,6 +20,22 @@ export function openedText(l: Lot): string {
   return `Otwarta ${formatDate(l.openedAt)}${d > 0 ? ` · ${d} ${plural(d, 'dzień', 'dni', 'dni')} temu` : d === 0 ? ' · dziś' : ''}`;
 }
 
+function shelvesOf(lots: Lot[]): string | null {
+  const s = [...new Set(lots.map((l) => l.shelf).filter(Boolean))];
+  return s.length ? `półka ${s.join(', ')}` : null;
+}
+
+/** Datalist with every shelf already used — rendered once in the app for shelf inputs. */
+export function ShelfOptions({ shelves }: { shelves: string[] }) {
+  return (
+    <datalist id="shelf-options">
+      {shelves.map((s) => (
+        <option key={s} value={s} />
+      ))}
+    </datalist>
+  );
+}
+
 /** "2 partie · 1 otwarta · najbliższy termin 3 lis" — or a call to action when empty. */
 export function lotsSummary(lots: Lot[]): string {
   if (!lots.length) return 'Otwarte i daty ważności';
@@ -29,6 +45,7 @@ export function lotsSummary(lots: Lot[]): string {
     `${lots.length} ${plural(lots.length, 'partia', 'partie', 'partii')}`,
     open ? `${open} otw.` : null,
     next ? `termin ${formatDate(next.expiresAt)}` : null,
+    shelvesOf(lots),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -110,6 +127,19 @@ export function LotEditor({
               </button>
             </div>
             <div className="lot__dates">
+              <label className="lot__date">
+                <span>Półka</span>
+                <input
+                  type="text"
+                  className="input"
+                  list="shelf-options"
+                  placeholder="np. A2"
+                  autoComplete="off"
+                  value={l.shelf ?? ''}
+                  style={{ width: 120 }}
+                  onChange={(e) => set(l.id, { shelf: e.target.value || undefined })}
+                />
+              </label>
               {l.open && (
                 <label className="lot__date">
                   <span>Data otwarcia</span>
@@ -169,6 +199,9 @@ export function LotsList({ lots, unit, compact, headingLevel = 'h2' }: { lots: L
               <li key={l.id} className="fifo__item">
                 <span className="fifo__n mono">
                   {l.qty} {unit}
+                </span>
+                <span className={`shelf-tag${l.shelf ? '' : ' is-none'}`} title="Półka">
+                  {l.shelf ?? 'bez półki'}
                 </span>
                 <span className="stack-2" style={{ flex: 1 }}>
                   <span className="fifo__state">
