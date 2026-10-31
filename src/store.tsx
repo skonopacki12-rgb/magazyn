@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { mergeValue } from './lib/merge';
+import { LOG_LIMIT as PARTS_LOG_LIMIT, mergeLog, PART_NAMES, PARTS, partChanged, pickPart, type PartName } from './lib/parts';
 import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
@@ -47,7 +49,7 @@ export interface Receipt {
   expiresAt?: string;
 }
 
-const LOG_LIMIT = 300;
+const LOG_LIMIT = PARTS_LOG_LIMIT;
 
 export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & {
   packSize?: number;
@@ -79,12 +81,15 @@ type Action =
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
   | { type: 'replace'; state: State }
+  | { type: 'patch'; patch: Partial<State> }
   | { type: 'reset'; mode: ResetMode; date: string };
 
 /** `products`: delete every product (start from scratch). `stock`: keep products, set all stock to 0. */
 export type ResetMode = 'products' | 'stock';
 
 export type SyncStatus = 'saved' | 'saving' | 'error' | 'conflict';
+
+const same = (a: unknown, b: unknown) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
 /** Today's audit of a shelf (an audit from another day starts fresh). */
 function auditFor(state: State, shelf: string, date: string): ShelfAudit {
@@ -96,6 +101,8 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'replace':
       return action.state;
+    case 'patch':
+      return { ...state, ...action.patch };
     case 'reset':
       if (action.mode === 'products')
         return { ...state, products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {}, training: null, pending: [], orderDraft: {} };
@@ -285,7 +292,7 @@ const Ctx = createContext<Store | null>(null);
 /** Loads the signed-in user's warehouse from Cloudflare (D1), then provides it. */
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { expired } = useAuth();
-  const [loaded, setLoaded] = useState<{ data: State; version: number } | null>(null);
+  const [loaded, setLoaded] = useState<{ data: State; versions: Record<PartName, number> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(() => {
     setError(null);
@@ -299,7 +306,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   if (error) return <Splash text={error} retry={load} />;
   if (!loaded) return <Splash text="Wczytywanie magazynu…" />;
   return (
-    <SyncedStore initial={loaded.data} version={loaded.version} onUnauthorized={expired}>
+    <SyncedStore initial={loaded.data} versions={loaded.versions} onUnauthorized={expired}>
       {children}
     </SyncedStore>
   );
@@ -312,49 +319,82 @@ const RETRY_DELAY = 4000;
  * Keeps local state in a reducer (instant UI) and saves it to the server shortly after each change.
  * Saves are serialized; a 409 means another device saved first, so we adopt the server copy.
  */
-function SyncedStore({ initial, version, onUnauthorized, children }: { initial: State; version: number; onUnauthorized: () => void; children: ReactNode }) {
+function SyncedStore({
+  initial,
+  versions,
+  onUnauthorized,
+  children,
+}: {
+  initial: State;
+  versions: Record<PartName, number>;
+  onUnauthorized: () => void;
+  children: ReactNode;
+}) {
   const [state, dispatch] = useReducer(reducer, initial);
   const [sync, setSync] = useState<SyncStatus>('saved');
   const stateRef = useRef(state);
+  /** Last state known to be saved — compared per part (by field identity) to find what changed. */
   const savedRef = useRef(initial);
-  const versionRef = useRef(version);
+  const versionsRef = useRef(versions);
   const inFlight = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   stateRef.current = state;
+  const dirtyParts = () => PART_NAMES.filter((p) => partChanged(stateRef.current as never, savedRef.current as never, p));
 
   const flush = useCallback(async () => {
     clearTimeout(timer.current);
-    if (inFlight.current || stateRef.current === savedRef.current) return;
+    const dirty = dirtyParts();
+    if (inFlight.current || !dirty.length) return;
     inFlight.current = true;
     const snapshot = stateRef.current;
     setSync('saving');
     let retryIn = 0;
     try {
-      const r = await api.putState(snapshot, versionRef.current);
-      versionRef.current = r.version;
-      savedRef.current = snapshot;
-      setSync('saved');
+      const payload = Object.fromEntries(dirty.map((p) => [p, { data: pickPart(snapshot as never, p), version: versionsRef.current[p] ?? 0 }]));
+      const r = await api.putParts(payload);
+      let saved: State = savedRef.current;
+      for (const p of dirty) if (r.versions[p] != null) saved = { ...saved, ...(pickPart(snapshot as never, p) as Partial<State>) };
+      versionsRef.current = { ...versionsRef.current, ...r.versions };
+      // Log: the server merged entries from all devices; keep local ones added meanwhile.
+      const mergedLog = r.merged.log?.data.log as State['log'];
+      if (mergedLog) {
+        const union = mergeLog(stateRef.current.log ?? [], mergedLog);
+        const next = union.length === mergedLog.length ? mergedLog : union;
+        saved = { ...saved, log: mergedLog };
+        if (next !== stateRef.current.log) dispatch({ type: 'patch', patch: { log: next } });
+      }
+      // Parts saved meanwhile on another device: merge item by item (3-way) with the server copy;
+      // what changed only here is kept and saved again, the server wins only for the same item.
+      const conflicted = Object.entries(r.conflicts) as [PartName, { data: Partial<State>; version: number }][];
+      let clash = false;
+      for (const [p, c] of conflicted) {
+        versionsRef.current[p] = c.version;
+        const patch: Record<string, unknown> = {};
+        for (const k of PARTS[p]) {
+          const theirs = (c.data as Record<string, unknown>)[k];
+          const res = mergeValue((savedRef.current as unknown as Record<string, unknown>)[k], (stateRef.current as unknown as Record<string, unknown>)[k], theirs);
+          clash ||= res.clash;
+          patch[k] = same(res.value, theirs) ? theirs : res.value;
+          saved = { ...saved, [k]: theirs } as State;
+        }
+        dispatch({ type: 'patch', patch: patch as Partial<State> });
+      }
+      savedRef.current = saved;
+      setSync(clash ? 'conflict' : 'saved');
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 401) return onUnauthorized();
-      const p = err.payload as { data?: State; version?: number } | undefined;
-      if (err.status === 409 && p?.data && typeof p.version === 'number') {
-        versionRef.current = p.version;
-        savedRef.current = p.data;
-        dispatch({ type: 'replace', state: p.data });
-        setSync('conflict');
-      } else {
-        setSync('error');
-        retryIn = RETRY_DELAY;
-      }
+      setSync('error');
+      retryIn = RETRY_DELAY;
     } finally {
       inFlight.current = false;
     }
-    if (stateRef.current !== savedRef.current) timer.current = setTimeout(flush, retryIn || SAVE_DELAY);
+    if (dirtyParts().length) timer.current = setTimeout(flush, retryIn || SAVE_DELAY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onUnauthorized]);
 
   useEffect(() => {
-    if (state === savedRef.current) return;
+    if (!PART_NAMES.some((p) => partChanged(state as never, savedRef.current as never, p))) return;
     clearTimeout(timer.current);
     timer.current = setTimeout(flush, SAVE_DELAY);
   }, [state, flush]);
@@ -370,7 +410,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
-      if (stateRef.current !== savedRef.current) e.preventDefault();
+      if (dirtyParts().length) e.preventDefault();
     };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);

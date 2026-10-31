@@ -1,4 +1,5 @@
 import type { State } from '../store';
+import type { PartName } from './parts';
 
 export interface User {
   id: string;
@@ -35,6 +36,11 @@ export const api = {
   login: (email: string, password: string) => request<{ user: User }>('POST', '/api/auth/login', { email, password }),
   register: (name: string, email: string, password: string) => request<{ user: User }>('POST', '/api/auth/register', { name, email, password }),
   logout: () => request<{ ok: true }>('POST', '/api/auth/logout'),
-  getState: () => request<{ data: State; version: number }>('GET', '/api/state'),
-  putState: (data: State, version: number) => request<{ version: number }>('PUT', '/api/state', { data, version }),
+  getState: () => request<{ data: State; versions: Record<PartName, number> }>('GET', '/api/state'),
+  putParts: (parts: Partial<Record<PartName, { data: unknown; version: number }>>) =>
+    request<{
+      versions: Partial<Record<PartName, number>>;
+      conflicts: Partial<Record<PartName, { data: Partial<State>; version: number }>>;
+      merged: Partial<Record<PartName, { data: Partial<State>; version: number }>>;
+    }>('PUT', '/api/state/parts', { parts }),
 };

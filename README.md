@@ -55,8 +55,14 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 - **Nowe konto** dostaje magazyn z 18 przykładowymi produktami.
 - **Zapis danych:** zmiany widać od razu, a ok. 0,6 s później zapisują się w D1
   (natychmiast przy ukryciu/zamknięciu karty). Brak sieci → komunikat i ponawianie.
-- **Kilka urządzeń:** każdy zapis ma numer wersji. Jeśli inne urządzenie zapisało wcześniej,
-  aplikacja wczytuje najnowszą wersję i pokazuje komunikat, zamiast po cichu nadpisać cudze zmiany.
+- **Zapis po częściach:** magazyn jest zapisywany jako 6 niezależnych części (produkty, inwentaryzacja,
+  zamówienia, szkolenie, półki, dziennik), każda z własną wersją i limitem ~1,9 MB. Urządzenie wysyła
+  tylko zmienione części.
+- **Kilka urządzeń:** jeśli inne urządzenie zapisało tę samą część wcześniej, aplikacja scala zmiany
+  element po elemencie (3-way): różne produkty/półki/partie łączą się; dopiero gdy oba urządzenia
+  zmieniły ten sam element, wygrywa wersja z serwera (z komunikatem). Dziennik ruchów jest scalany zawsze.
+- Migracje bazy: `npm run db:migrate:remote` (0002 tworzy tabelę `warehouse_parts`; stare dane przenoszą się
+  same przy pierwszym odczycie).
 
 ### API
 

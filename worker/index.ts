@@ -1,3 +1,4 @@
+import { joinParts, mergeLog, PART_NAMES, pickPart, splitState, validPart, type PartName } from '../src/lib/parts';
 import { SEED_LAST_COUNT, SEED_PRODUCTS } from '../src/lib/seed';
 import { hashPassword, PBKDF2_ITERATIONS, randomHex, safeEqual, sha256 } from './crypto';
 
@@ -22,7 +23,6 @@ async function registrationOpen(env: Env, email?: string): Promise<boolean> {
 
 const COOKIE = 'magazyn_session';
 const SESSION_DAYS = 30;
-const MAX_STATE_BYTES = 1_000_000;
 
 class HttpError extends Error {
   constructor(public status: number, message: string) {
@@ -105,7 +105,9 @@ async function register(env: Env, req: Request) {
     env.DB.prepare('INSERT INTO users (id, email, name, password_hash, salt, iterations, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(
       id, email, name, hash, salt, PBKDF2_ITERATIONS, now,
     ),
-    env.DB.prepare('INSERT INTO warehouses (user_id, data, version, updated_at) VALUES (?, ?, 1, ?)').bind(id, JSON.stringify(initial), now),
+    ...Object.entries(splitState(initial)).map(([part, data]) =>
+      env.DB.prepare('INSERT INTO warehouse_parts (user_id, part, data, version, updated_at) VALUES (?, ?, ?, 1, ?)').bind(id, part, JSON.stringify(data), now),
+    ),
   ]);
   const cookie = await createSession(env, id, req);
   return json({ user: { id, email, name } }, 201, { 'set-cookie': cookie });
@@ -131,37 +133,99 @@ async function logout(env: Env, req: Request) {
   return json({ ok: true }, 200, { 'set-cookie': sessionCookie('', 0, new URL(req.url).protocol === 'https:') });
 }
 
-async function getState(env: Env, req: Request) {
-  const u = await requireUser(env, req);
-  const row = await env.DB.prepare('SELECT data, version FROM warehouses WHERE user_id = ?').bind(u.id).first<{ data: string; version: number }>();
-  if (!row) throw new HttpError(404, 'Brak magazynu.');
-  return json({ data: JSON.parse(row.data), version: row.version });
+const MAX_PART_BYTES = 1_900_000;
+
+interface PartRow {
+  part: string;
+  data: string;
+  version: number;
 }
 
-async function putState(env: Env, req: Request) {
+/** Loads the user's parts; on first use splits the old single document into parts. */
+async function loadParts(env: Env, userId: string): Promise<PartRow[]> {
+  const rows = (await env.DB.prepare('SELECT part, data, version FROM warehouse_parts WHERE user_id = ?').bind(userId).all<PartRow>()).results;
+  if (rows.length) return rows;
+  const old = await env.DB.prepare('SELECT data FROM warehouses WHERE user_id = ?').bind(userId).first<{ data: string }>();
+  if (!old) throw new HttpError(404, 'Brak magazynu.');
+  const parts = splitState(JSON.parse(old.data));
+  const now = Date.now();
+  await env.DB.batch(
+    PART_NAMES.map((p) =>
+      env.DB.prepare('INSERT OR IGNORE INTO warehouse_parts (user_id, part, data, version, updated_at) VALUES (?, ?, ?, 1, ?)').bind(userId, p, JSON.stringify(parts[p]), now),
+    ),
+  );
+  return (await env.DB.prepare('SELECT part, data, version FROM warehouse_parts WHERE user_id = ?').bind(userId).all<PartRow>()).results;
+}
+
+async function getState(env: Env, req: Request) {
+  const u = await requireUser(env, req);
+  const rows = await loadParts(env, u.id);
+  const parts: Record<string, Record<string, unknown>> = {};
+  const versions: Record<string, number> = {};
+  for (const r of rows) {
+    parts[r.part] = JSON.parse(r.data);
+    versions[r.part] = r.version;
+  }
+  for (const p of PART_NAMES) versions[p] ??= 0;
+  return json({ data: joinParts(parts), versions });
+}
+
+/**
+ * Saves changed parts. Each part is checked against its own version; a part changed meanwhile on
+ * another device comes back in `conflicts` (the others are saved). The log is merged, never conflicts.
+ */
+async function putParts(env: Env, req: Request) {
   const u = await requireUser(env, req);
   const raw = await req.text();
-  if (raw.length > MAX_STATE_BYTES) throw new HttpError(413, 'Za dużo danych.');
-  let b: { data?: unknown; version?: number };
+  if (raw.length > PART_NAMES.length * MAX_PART_BYTES) throw new HttpError(413, 'Za dużo danych.');
+  let b: { parts?: Record<string, { data?: Record<string, unknown>; version?: number }> };
   try {
     b = JSON.parse(raw);
   } catch {
     throw new HttpError(400, 'Nieprawidłowe dane.');
   }
-  const d = b.data as Record<string, unknown> | undefined;
-  if (!d || !Array.isArray(d.products) || typeof d.lastCount !== 'string' || typeof d.counts !== 'object' || typeof d.ordered !== 'object')
-    throw new HttpError(400, 'Nieprawidłowe dane magazynu.');
-  if (typeof b.version !== 'number') throw new HttpError(400, 'Brak wersji.');
+  await loadParts(env, u.id); // make sure rows exist (migration)
+  const versions: Record<string, number> = {};
+  const conflicts: Record<string, { data: unknown; version: number }> = {};
+  const merged: Record<string, { data: unknown; version: number }> = {};
+  const now = Date.now();
 
-  const res = await env.DB.prepare('UPDATE warehouses SET data = ?, version = version + 1, updated_at = ? WHERE user_id = ? AND version = ?')
-    .bind(JSON.stringify(d), Date.now(), u.id, b.version)
-    .run();
-  if (res.meta.changes === 0) {
-    // Someone else (another device) saved first — hand back the current copy.
-    const cur = await env.DB.prepare('SELECT data, version FROM warehouses WHERE user_id = ?').bind(u.id).first<{ data: string; version: number }>();
-    return json({ error: 'Dane zmieniły się na innym urządzeniu.', data: cur ? JSON.parse(cur.data) : null, version: cur?.version ?? 0 }, 409);
+  for (const [name, part] of Object.entries(b.parts ?? {})) {
+    if (!PART_NAMES.includes(name as PartName)) throw new HttpError(400, `Nieznana część: ${name}`);
+    const p = name as PartName;
+    const data = pickPart(part.data ?? {}, p);
+    if (!validPart(p, data)) throw new HttpError(400, `Nieprawidłowe dane: ${name}`);
+    if (typeof part.version !== 'number') throw new HttpError(400, 'Brak wersji.');
+    const cur = await env.DB.prepare('SELECT data, version FROM warehouse_parts WHERE user_id = ? AND part = ?').bind(u.id, p).first<{ data: string; version: number }>();
+
+    if (p === 'log') {
+      const log = mergeLog((cur ? JSON.parse(cur.data).log : []) as { id: string; at: string }[], (data.log ?? []) as { id: string; at: string }[]);
+      const text = JSON.stringify({ log });
+      const v = (cur?.version ?? 0) + 1;
+      await env.DB.prepare('INSERT INTO warehouse_parts (user_id, part, data, version, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id, part) DO UPDATE SET data = excluded.data, version = excluded.version, updated_at = excluded.updated_at')
+        .bind(u.id, p, text, v, now)
+        .run();
+      versions[p] = v;
+      merged[p] = { data: { log }, version: v };
+      continue;
+    }
+
+    const text = JSON.stringify(data);
+    if (text.length > MAX_PART_BYTES) throw new HttpError(413, `Za dużo danych w części „${name}”.`);
+    if (!cur) {
+      await env.DB.prepare('INSERT INTO warehouse_parts (user_id, part, data, version, updated_at) VALUES (?, ?, ?, 1, ?)').bind(u.id, p, text, now).run();
+      versions[p] = 1;
+      continue;
+    }
+    const res = await env.DB.prepare('UPDATE warehouse_parts SET data = ?, version = version + 1, updated_at = ? WHERE user_id = ? AND part = ? AND version = ?')
+      .bind(text, now, u.id, p, part.version)
+      .run();
+    if (res.meta.changes === 0) {
+      const fresh = await env.DB.prepare('SELECT data, version FROM warehouse_parts WHERE user_id = ? AND part = ?').bind(u.id, p).first<{ data: string; version: number }>();
+      conflicts[p] = { data: fresh ? JSON.parse(fresh.data) : {}, version: fresh?.version ?? 0 };
+    } else versions[p] = part.version + 1;
   }
-  return json({ version: b.version + 1 });
+  return json({ versions, conflicts, merged });
 }
 
 async function api(req: Request, env: Env, path: string): Promise<Response> {
@@ -186,8 +250,10 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
     }
     case 'GET /api/state':
       return getState(env, req);
+    case 'PUT /api/state/parts':
+      return putParts(env, req);
     case 'PUT /api/state':
-      return putState(env, req);
+      throw new HttpError(410, 'Aplikacja została zaktualizowana — odśwież stronę.');
   }
   throw new HttpError(404, 'Nie znaleziono.');
 }
