@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "magazyn",
+  "account_id": "98a3d293f841838f516a14de572e6845",
   "main": "worker/index.ts",
   "compatibility_date": "2025-09-06",
   "assets": {
@@ -11,8 +12,7 @@
     {
       "binding": "DB",
       "database_name": "magazyn",
-      // Replace with the id printed by `npx wrangler d1 create magazyn`.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "47f90ae5-794b-4e62-9247-250bbb3799eb",
       "migrations_dir": "migrations"
     }
   ],
