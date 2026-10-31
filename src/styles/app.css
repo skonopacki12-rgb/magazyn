@@ -2776,3 +2776,15 @@ button.rack__slot:hover {
   background: var(--surface-2);
   border: 1px solid var(--line);
 }
+
+.backup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+.backup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

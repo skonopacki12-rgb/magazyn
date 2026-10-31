@@ -69,6 +69,12 @@ npm run dev                # http://localhost:5173 — aplikacja + API + lokalna
 | GET    | `/api/state`         | magazyn użytkownika `{ data, version }`    |
 | PUT    | `/api/state`         | `{ data, version }` → 409 przy konflikcie  |
 
+## Kopia zapasowa i eksport
+
+Menu konta → **Kopia zapasowa i eksport** (`/kopia`):
+- **Pobierz kopię** — pełny stan magazynu w pliku `.json`; **Przywróć z pliku** — zastępuje dane kopią (z potwierdzeniem).
+- **Eksport CSV** dla Excela/Numbers: stany (z wartością), partie i terminy, historia inwentaryzacji, dziennik ruchów.
+
 ## Produkty z folderów
 
 Przycisk **„Dodaj produkty z folderów (domyślne)”** (`/katalog`) otwiera listę 244 produktów

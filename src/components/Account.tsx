@@ -49,6 +49,9 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <Link to="/kopia" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
+            Kopia zapasowa i eksport
+          </Link>
           <Link to="/polki" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
             Półki — układ i podgląd
           </Link>

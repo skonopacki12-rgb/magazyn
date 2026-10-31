@@ -256,6 +256,8 @@ interface Store {
   saveShelf: (shelf: ShelfDef) => void;
   deleteShelf: (id: string) => void;
   shelfAudit: (shelf: string) => ShelfAudit;
+  /** Replaces the whole warehouse with a backup (saved to the cloud like any change). */
+  restore: (data: State) => void;
   adjustShelf: (adjust: Adjust) => void;
   checkOnShelf: (shelf: string, productId: string) => void;
   finishShelf: (shelf: string, finished: boolean) => void;
@@ -429,6 +431,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       saveShelf: (shelf) => dispatch({ type: 'saveShelf', shelf }),
       deleteShelf: (id) => dispatch({ type: 'deleteShelf', id }),
       shelfAudit: (shelf) => auditFor(state, shelf, todayIso()),
+      restore: (data) => dispatch({ type: 'replace', state: data }),
       adjustShelf: (adjust) => dispatch({ type: 'shelfAdjust', adjust, at: new Date().toISOString(), date: todayIso() }),
       checkOnShelf: (shelf, productId) => dispatch({ type: 'shelfCheck', shelf, productId, date: todayIso() }),
       finishShelf: (shelf, finished) => dispatch({ type: 'shelfFinish', shelf, date: todayIso(), finished }),
