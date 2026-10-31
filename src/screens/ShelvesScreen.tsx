@@ -386,7 +386,7 @@ export function ShelfEditor() {
           <PrintSheet shelf={shelf} byId={byId} />
           {showStock && (
             <p className="hint">
-              Liczba = sztuki tego produktu na półce {shelf.name} wg partii · <span className="rack__dot is-low" style={{ display: 'inline-block' }} /> otwarta
+              Każde miejsce to jedna butelka · liczba = ile ml jest w tej butelce · <span className="rack__dot is-low" style={{ display: 'inline-block' }} /> otwarta
               lub krótki termin · <span className="rack__dot is-out" style={{ display: 'inline-block' }} /> po terminie
             </p>
           )}

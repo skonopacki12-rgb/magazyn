@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { bottlesOfLots, orderUnitOf, type Bottle } from '../lib/units';
+import { pickOrder } from '../lib/training';
 import { expiryState } from '../lib/fifo';
 import { matches, tokenize } from '../lib/text';
 import type { ShelfDef, StockedProduct } from '../lib/types';
@@ -63,6 +65,19 @@ export function shortName(name: string): string {
 }
 
 export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', onSlot, over }: PreviewProps) {
+  // Each slot is one bottle: the product's bottles on this shelf (FIFO order: what to use first) are
+  // handed out to its slots in reading order, so every slot shows its own bottle's amount and state.
+  const bottleAt = new Map<string, Bottle | null>();
+  const queues = new Map<string, Bottle[]>();
+  shelf.rows.forEach((row, r) =>
+    row.slots.forEach((pid, i) => {
+      if (!pid) return;
+      const p = byId(pid);
+      if (!p) return;
+      if (!queues.has(pid)) queues.set(pid, bottlesOfLots(p, pickOrder((p.lots ?? []).filter((l) => (l.shelf ?? '') === shelf.name))));
+      bottleAt.set(`${r}-${i}`, queues.get(pid)!.shift() ?? null);
+    }),
+  );
   return (
     <div className={`rack rack--${size}`} role="img" aria-label={`Podgląd półki ${shelf.name}`}>
       {shelf.rows.map((row, r) => (
@@ -70,10 +85,11 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
           <div className="rack__slots">
             {row.slots.map((pid, i) => {
               const p = pid ? byId(pid) : undefined;
-              const here = (p?.lots ?? []).filter((l) => (l.shelf ?? '') === shelf.name);
-              const qty = here.reduce((s, l) => s + l.qty, 0);
-              const open = here.some((l) => l.open);
-              const worst = here.map((l) => expiryState(l)).find((s) => s === 'expired') ?? here.map((l) => expiryState(l)).find((s) => s === 'soon');
+              const bottle = bottleAt.get(`${r}-${i}`) ?? null;
+              const inMl = p ? orderUnitOf(p).perUnit > 1 : false;
+              const open = !!bottle?.open;
+              const st = bottle ? expiryState(bottle.lot) : null;
+              const worst = st === 'expired' || st === 'soon' ? st : undefined;
               const Tag = onSlot ? 'button' : 'div';
               return (
                 <Tag
@@ -96,12 +112,14 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
                   )}
                   {showStock && p && (
                     <span className="rack__badges">
-                      {p.lots?.length ? (
-                        <span className={`rack__qty${qty ? '' : ' is-zero'}`} title={`${qty} na tej półce wg partii`}>
-                          {qty}
-                        </span>
+                      {bottle ? (
+                        inMl && (
+                          <span className="rack__qty" title={`${open ? 'Otwarta' : 'Zamknięta'} butelka: ${bottle.qty} ml`}>
+                            {bottle.qty}
+                          </span>
+                        )
                       ) : (
-                        <span className="rack__qty is-unknown" title="Brak danych o partiach">
+                        <span className="rack__qty is-unknown" title="Brak tej butelki w partiach na tej półce">
                           ?
                         </span>
                       )}

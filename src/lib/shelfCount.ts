@@ -1,7 +1,7 @@
 import { newLot } from './fifo';
 import { pickOrder, type Move } from './training';
 import type { Lot, Product, ShelfDef } from './types';
-import { bottleCount, bottlesOf, orderUnitOf } from './units';
+import { bottleCount, bottlesOf, orderUnitOf, splitLotsIntoBottles } from './units';
 
 /** One product as found on a shelf: what the lots say and how many slots it has in the layout. */
 export interface ShelfItem {
@@ -87,6 +87,8 @@ export function adjustOnShelf(
     }
     lots = lots.filter((l) => l.qty > 0);
   }
+  // Keep bottles separate on the shelf (whole closed bottles + single opened ones).
+  lots = [...lots.filter((l) => (l.shelf ?? '') !== a.shelf), ...splitLotsIntoBottles(p, lots.filter((l) => (l.shelf ?? '') === a.shelf))];
   const qty = Math.max(0, p.qty + delta);
   const nextProducts = products.map((x) => (x.id === p.id ? { ...x, qty, lots } : x));
 

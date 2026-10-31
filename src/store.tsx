@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
 import { volumeOf } from './lib/volume';
 import { unitFor } from './lib/catalog';
-import { orderUnitOf } from './lib/units';
+import { lotsFromQty, orderUnitOf, splitLotsIntoBottles } from './lib/units';
 import { loadCopy, saveCopy } from './lib/offline';
 import { mergeValue } from './lib/merge';
 import { LOG_LIMIT as PARTS_LOG_LIMIT, mergeLog, PART_NAMES, PARTS, partChanged, pickPart, type PartName } from './lib/parts';
@@ -332,7 +332,14 @@ function reducer(state: State, action: Action): State {
         const raw = state.counts[p.id];
         if (p.archived || raw == null || raw === '') return p;
         const qty = Number(raw);
-        const lots = (state.countLots?.[p.id] ?? []).filter((l) => l.qty > 0);
+        // Every bottle separately: a typed "1300 ml" becomes a full 1000 ml bottle + an opened 300 ml one.
+        const counted = (state.countLots?.[p.id] ?? []).filter((l) => l.qty > 0);
+        const shelves = [...new Set((p.lots ?? []).map((l) => l.shelf ?? ''))];
+        const lots = counted.length
+          ? splitLotsIntoBottles(p, counted)
+          : orderUnitOf(p).perUnit > 1
+            ? lotsFromQty(p, qty, shelves.length === 1 && shelves[0] ? { shelf: shelves[0] } : {})
+            : [];
         return { ...p, qty, lots, hist: [...p.hist.filter((h) => h.date !== action.date), { date: action.date, qty }] };
       });
       return { ...state, products, lastCount: action.date, counts: {}, ordered: {}, countLots: {} };

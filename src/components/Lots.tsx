@@ -204,14 +204,15 @@ export function LotEditor({
                     value={inBottles(l) ? nBottles(l) : l.qty}
                     onChange={(e) => {
                       const n = Math.max(0, Number(digitsOnly(e.target.value)) || 0);
-                      set(l.id, { qty: inBottles(l) ? n * bottle : n });
+                      // An opened bottle can't hold more than a full one.
+                      set(l.id, { qty: inBottles(l) ? n * bottle : bottle > 1 && l.open ? Math.min(n, bottle) : n });
                     }}
                   />
                   <button
                     type="button"
                     className="stepper__btn"
                     aria-label={inBottles(l) ? 'Jedna butelka więcej' : 'Więcej'}
-                    onClick={() => set(l.id, { qty: inBottles(l) ? (nBottles(l) + 1) * bottle : l.qty + 1 })}
+                    onClick={() => set(l.id, { qty: inBottles(l) ? (nBottles(l) + 1) * bottle : bottle > 1 ? Math.min(bottle, l.qty + 1) : l.qty + 1 })}
                   >
                     <Icon name="plus" size={16} />
                   </button>
