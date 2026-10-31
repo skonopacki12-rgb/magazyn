@@ -7,6 +7,17 @@ export interface HistoryEntry {
   qty: number;
 }
 
+/** One FIFO batch of a product: N units in the same state with the same dates. */
+export interface Lot {
+  id: string;
+  qty: number;
+  open: boolean;
+  /** ISO date the bottle/pack was opened (only when open). */
+  openedAt?: string;
+  /** ISO best-before date. */
+  expiresAt?: string;
+}
+
 export interface Product {
   /** Stable key; the visible `code` can be edited. */
   id: string;
@@ -28,6 +39,8 @@ export interface Product {
   image?: string;
   /** Id of the catalog entry this product came from. */
   catalogId?: string;
+  /** FIFO batches recorded in the last finished inventory. */
+  lots?: Lot[];
 }
 
 /** One entry of public/katalog/katalog.json. */

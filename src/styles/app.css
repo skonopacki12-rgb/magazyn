@@ -96,7 +96,8 @@ h3,
 p {
   margin: 0;
 }
-ul {
+ul,
+ol {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1827,4 +1828,208 @@ button.trow:hover {
 .band.is-new {
   background: var(--surface-2);
   border-bottom: 1px solid var(--line);
+}
+
+/* ───────── FIFO lots ───────── */
+.lot-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  margin: 2px 0 0 -4px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  text-align: left;
+}
+.lot-toggle:hover {
+  background: var(--accent-soft);
+}
+.lot-toggle.has-lots {
+  color: var(--ink-2);
+}
+.lot-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 2px;
+}
+.lots {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.lot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.lot.is-open {
+  border-color: var(--low-bg);
+  box-shadow: inset 3px 0 0 var(--low-bg);
+}
+.lot__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.lot__qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.lot__qty .stepper__btn {
+  width: 40px;
+  height: 40px;
+}
+.lot__qty .stepper__input {
+  width: 52px;
+  height: 40px;
+  font-size: 17px;
+}
+.lot__qty .stepper__unit {
+  margin-left: 2px;
+  font-size: 13px;
+}
+.lot__del {
+  margin-left: auto;
+}
+.seg--xs {
+  padding: 3px;
+  border-radius: 10px;
+}
+.seg--xs .seg__btn {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+.lot__dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 12px;
+}
+.lot__date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.lot__date .input {
+  width: 160px;
+  height: 40px;
+  padding: 0 10px;
+  font-size: 15px;
+}
+.lot__badge {
+  align-self: center;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  padding: 4px 8px;
+}
+.lots__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.lots__foot .btn {
+  min-height: 40px;
+  font-size: 14px;
+}
+.fifo {
+  counter-reset: none;
+}
+.fifo__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+}
+.fifo__n {
+  flex: none;
+  min-width: 56px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.fifo__state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.fifo__first {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.fifo__exp {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--muted);
+}
+.fifo__exp--expired {
+  color: var(--out-bg);
+  font-weight: 700;
+}
+.fifo__exp--soon {
+  color: #8a5a00;
+  font-weight: 700;
+}
+
+/* Expiry banner + page */
+.banner--exp .banner__icon {
+  background: var(--out-bg);
+  color: #fff;
+}
+.exp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.exp-row:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+
+.num-input.is-sum {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stepper__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.inv-line > .trow {
+  min-height: 56px;
 }

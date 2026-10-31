@@ -4,6 +4,7 @@ import { CountInput, groupByCategory, Progress, SameButton, Segmented, useInvent
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
+import { LotEditor, LotToggle } from '../../components/Lots';
 import { formatDiff, matches, tokenize } from '../../lib/text';
 import { FinishAction, InventoryEmpty } from '../phone/Inventory';
 
@@ -47,7 +48,7 @@ export function TabletInventory() {
             </div>
             <ul className="inv-grid">
               {g.items.map((p) => (
-                <li key={p.id} className={`inv-card${p.counted ? ' is-filled' : ''}`}>
+                <li key={p.id} className={`inv-card${p.counted ? ' is-filled' : ''}`} style={m.isExpanded(p) ? { gridColumn: '1 / -1' } : undefined}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {p.image && <Thumb src={p.image} size="sm" />}
                     <div className="stack-2">
@@ -57,19 +58,35 @@ export function TabletInventory() {
                       <span className="code">
                         {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                       </span>
+                      <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`tlots-${p.id}`} />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button type="button" className="stepper__btn" aria-label={`Odejmij 1: ${p.name}`} onClick={() => m.step(p, -1)}>
+                    <button
+                      type="button"
+                      className="stepper__btn"
+                      aria-label={`Odejmij 1: ${p.name}`}
+                      disabled={p.countLots.length > 0}
+                      onClick={() => m.step(p, -1)}
+                    >
                       <Icon name="minus" size={20} />
                     </button>
                     <CountInput id={`tinw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
-                    <button type="button" className="stepper__btn" aria-label={`Dodaj 1: ${p.name}`} onClick={() => m.step(p, 1)}>
+                    <button
+                      type="button"
+                      className="stepper__btn"
+                      aria-label={`Dodaj 1: ${p.name}`}
+                      disabled={p.countLots.length > 0}
+                      onClick={() => m.step(p, 1)}
+                    >
                       <Icon name="plus" size={20} />
                     </button>
                     <span className="spacer" />
                     {!p.uncounted && <SameButton p={p} variant="tablet" onClick={() => m.same(p)} />}
                   </div>
+                  {m.isExpanded(p) && (
+                    <LotEditor id={`tlots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                  )}
                 </li>
               ))}
             </ul>
@@ -178,22 +195,34 @@ export function LaptopInventory() {
                   </div>
                   <ul>
                     {g.items.map((p) => (
-                      <li key={p.id} className="trow trow--inv inv-line">
-                        <label htmlFor={`linw-${p.id}`} className="t-name" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          {p.image && <Thumb src={p.image} size="xs" />}
-                          <span>{p.name}</span>
-                        </label>
-                        <span className="code">{p.code}</span>
-                        <span className="t-num t-right" style={{ color: 'var(--ink-2)' }}>
-                          {p.uncounted ? '—' : `${p.prev} ${p.unit}`}
-                        </span>
-                        <span style={{ display: 'flex', justifyContent: 'center' }}>
-                          <CountInput id={`linw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
-                        </span>
-                        <span className={`t-num t-right ${p.diff ? 'is-strong' : 'is-quiet'}`}>{p.diff === null ? '—' : formatDiff(p.diff)}</span>
-                        <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          {!p.uncounted && <SameButton p={p} variant="laptop" onClick={() => m.same(p)} />}
-                        </span>
+                      <li key={p.id} className="inv-line">
+                        <div className="trow trow--inv">
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            {p.image && <Thumb src={p.image} size="xs" />}
+                            <span className="stack-2">
+                              <label htmlFor={`linw-${p.id}`} className="t-name">
+                                {p.name}
+                              </label>
+                              <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`llots-${p.id}`} />
+                            </span>
+                          </span>
+                          <span className="code">{p.code}</span>
+                          <span className="t-num t-right" style={{ color: 'var(--ink-2)' }}>
+                            {p.uncounted ? '—' : `${p.prev} ${p.unit}`}
+                          </span>
+                          <span style={{ display: 'flex', justifyContent: 'center' }}>
+                            <CountInput id={`linw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
+                          </span>
+                          <span className={`t-num t-right ${p.diff ? 'is-strong' : 'is-quiet'}`}>{p.diff === null ? '—' : formatDiff(p.diff)}</span>
+                          <span style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            {!p.uncounted && <SameButton p={p} variant="laptop" onClick={() => m.same(p)} />}
+                          </span>
+                        </div>
+                        {m.isExpanded(p) && (
+                          <div style={{ padding: '0 16px 12px' }}>
+                            <LotEditor id={`llots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>

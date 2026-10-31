@@ -6,6 +6,8 @@ import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
+import { ExpiryBanner } from '../ExpiryScreen';
+import { LotsList } from '../../components/Lots';
 import { Link } from 'react-router-dom';
 import { MIN_LABELS, Stepper } from '../../components/Stepper';
 import { Qty, QtySmall, StatusBadge, StatusBand } from '../../components/Status';
@@ -48,6 +50,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
             <CategoryChips value={m.cat} onChange={m.setCat} matched={m.matched} layout="scroll" />
           </div>
           <div className="md__list-body">
+            {!m.hasQuery && <ExpiryBanner />}
             {needs.length > 0 && (
               <button type="button" className="banner" style={{ minHeight: 60, padding: '10px 14px' }} aria-pressed={m.panel === 'order'} onClick={m.showOrder}>
                 <span className="banner__icon">
@@ -126,6 +129,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
                   <p className="hint">Poniżej tej liczby produkt trafia na listę do zamówienia.</p>
                 </div>
               </div>
+              <LotsList lots={m.sel.lots ?? []} unit={m.sel.unit} headingLevel="h3" />
               <History
                 p={m.sel}
                 variant="lg"

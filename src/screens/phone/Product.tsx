@@ -5,6 +5,7 @@ import { Icon } from '../../components/Icon';
 import { draftToProduct, emptyDraft, ProductFields, type Draft } from '../../components/ProductForm';
 import { Qty, StatusBand } from '../../components/Status';
 import { Thumb } from '../../components/Thumb';
+import { LotsList } from '../../components/Lots';
 import { catLabel } from '../../lib/catalog';
 import { withStatus } from '../../lib/stock';
 import { formatDate } from '../../lib/text';
@@ -97,6 +98,8 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
             </div>
           </section>
         )}
+
+        {preview && <LotsList lots={preview.lots ?? []} unit={preview.unit} />}
 
         <section className="stack-4" style={{ gap: 14 }}>
           <h2 className="eyebrow">Dane produktu</h2>

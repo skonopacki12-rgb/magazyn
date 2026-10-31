@@ -77,6 +77,18 @@ więc nie trafiają od razu na listę „Do zamówienia”. Produktów już doda
 Dane i zdjęcia: `public/katalog/` (zdjęcia wycięte z PDF, `.webp`). Jak odświeżyć z nowych folderów:
 `tools/katalog/README.md`.
 
+## FIFO: otwarte butelki i daty ważności
+
+W inwentaryzacji przy każdym produkcie jest rozwijane „Otwarte i daty ważności”. Tam rozpisujesz sztuki
+na partie: ile sztuk, zamknięta czy otwarta, data otwarcia i data ważności. Suma partii wpisuje się sama
+jako „policzone”. „Bez zmian” przenosi partie z poprzedniej inwentaryzacji; wpisanie liczby ręcznie
+usuwa rozpisanie na partie.
+
+Po zakończeniu inwentaryzacji:
+- karta produktu pokazuje partie w kolejności FIFO (najpierw otwarte, potem najkrótszy termin) z „Zużyj najpierw”,
+- ekran **Terminy i otwarte** (`/terminy`, baner na liście i menu konta) zbiera partie po terminie,
+  z terminem ≤ 14 dni i wszystkie otwarte butelki.
+
 ## Ekrany
 
 | Ścieżka           | Telefon (< 768px)            | Tablet (768–1279px)                 | Laptop (≥ 1280px)              |

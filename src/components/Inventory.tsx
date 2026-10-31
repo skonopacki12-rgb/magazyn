@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { CATEGORIES } from '../lib/catalog';
 import { digitsOnly, formatDate, todayIso } from '../lib/text';
-import type { StockedProduct } from '../lib/types';
+import { cloneLots } from '../lib/fifo';
+import type { Lot, StockedProduct } from '../lib/types';
 import { useStore } from '../store';
 
 export interface InvItem extends StockedProduct {
@@ -10,6 +11,10 @@ export interface InvItem extends StockedProduct {
   counted: boolean;
   isSame: boolean;
   diff: number | null;
+  /** Batches entered in this inventory (FIFO). */
+  countLots: Lot[];
+  /** Batches from the previous inventory. */
+  prevLots: Lot[];
 }
 
 /**
@@ -17,8 +22,9 @@ export interface InvItem extends StockedProduct {
  * session; we keep a snapshot so the screen keeps showing what was just saved.
  */
 export function useInventory() {
-  const { products, state, setCount, finishInventory } = useStore();
+  const { products, state, setCount, setLots, finishInventory } = useStore();
   const [snapshot, setSnapshot] = useState<Record<string, string> | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | 'todo'>('all');
   const [todoIds, setTodoIds] = useState<string[]>([]);
   const counts = snapshot ?? state.counts;
@@ -28,9 +34,18 @@ export function useInventory() {
       products.map((p) => {
         const val = counts[p.id] ?? '';
         const counted = val !== '';
-        return { ...p, prev: p.qty, val, counted, isSame: counted && Number(val) === p.qty, diff: counted && !p.uncounted ? Number(val) - p.qty : null };
+        return {
+          ...p,
+          prev: p.qty,
+          val,
+          counted,
+          isSame: counted && Number(val) === p.qty,
+          diff: counted && !p.uncounted ? Number(val) - p.qty : null,
+          countLots: snapshot ? (p.lots ?? []) : (state.countLots?.[p.id] ?? []),
+          prevLots: p.lots ?? [],
+        };
       }),
-    [products, counts],
+    [products, counts, snapshot, state.countLots],
   );
 
   const set = (p: InvItem, v: string) => {
@@ -61,7 +76,23 @@ export function useInventory() {
     },
     todoIds,
     set,
-    same: (p: InvItem) => set(p, String(p.prev)),
+    same: (p: InvItem) => {
+      if (snapshot) setSnapshot(null);
+      if (p.prevLots.length) setLots(p.id, cloneLots(p.prevLots));
+      else setCount(p.id, String(p.prev));
+    },
+    setLots: (p: InvItem, lots: Lot[]) => {
+      if (snapshot) setSnapshot(null);
+      setLots(p.id, lots);
+    },
+    isExpanded: (p: InvItem) => expanded.has(p.id),
+    toggleExpanded: (p: InvItem) =>
+      setExpanded((s) => {
+        const n = new Set(s);
+        if (n.has(p.id)) n.delete(p.id);
+        else n.add(p.id);
+        return n;
+      }),
     step: (p: InvItem, d: number) => set(p, String(Math.max(0, (p.counted ? Number(p.val) : p.prev) + d))),
     finish: () => {
       if (!complete) return;
@@ -124,15 +155,18 @@ export function SameButton({ p, onClick, variant }: { p: InvItem; onClick: () =>
 }
 
 export function CountInput({ id, p, onChange, style }: { id: string; p: InvItem; onChange: (v: string) => void; style?: React.CSSProperties }) {
+  const fromLots = p.countLots.length > 0;
   return (
     <input
       id={id}
-      className={`num-input${p.counted ? ' is-filled' : ''}`}
+      className={`num-input${p.counted ? ' is-filled' : ''}${fromLots ? ' is-sum' : ''}`}
       type="text"
       inputMode="numeric"
       autoComplete="off"
       placeholder="–"
       value={p.val}
+      readOnly={fromLots}
+      title={fromLots ? 'Suma partii — zmień ilości w partiach' : undefined}
       style={style}
       onChange={(e) => onChange(e.target.value)}
     />

@@ -6,6 +6,8 @@ import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
+import { ExpiryBanner } from '../ExpiryScreen';
+import { LotsList } from '../../components/Lots';
 import { Link } from 'react-router-dom';
 import { MIN_LABELS, Stepper } from '../../components/Stepper';
 import { StatusBadge, StatusBand, Qty } from '../../components/Status';
@@ -56,6 +58,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
               />
             </div>
             <CategoryChips value={m.cat} onChange={m.setCat} matched={m.matched} layout="wrap" longLabels small />
+            {!m.hasQuery && <ExpiryBanner />}
 
             {n > 0 ? (
               <div className="card table-wrap">
@@ -201,6 +204,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                       <Stepper id="l-min" value={m.sel.min} onChange={m.setMin} small label={MIN_LABELS} />
                     </div>
                   </div>
+                  <LotsList lots={m.sel.lots ?? []} unit={m.sel.unit} compact headingLevel="h3" />
                   <History
                     p={m.sel}
                     variant="compact"

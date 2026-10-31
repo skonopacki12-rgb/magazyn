@@ -3,7 +3,7 @@ import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
 import { todayIso } from './lib/text';
-import type { CatalogItem, Product, StockedProduct, Unit } from './lib/types';
+import type { CatalogItem, Lot, Product, StockedProduct, Unit } from './lib/types';
 
 export interface State {
   products: Product[];
@@ -13,6 +13,8 @@ export interface State {
   counts: Record<string, string>;
   /** "Do zamówienia" check-offs: product id → ordered. Cleared by the next inventory. */
   ordered: Record<string, boolean>;
+  /** In-progress inventory FIFO batches: product id → lots. When present, their sum is the count. */
+  countLots?: Record<string, Lot[]>;
 }
 
 export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'>;
@@ -23,6 +25,7 @@ type Action =
   | { type: 'update'; id: string; patch: Partial<ProductDraft> }
   | { type: 'archive'; id: string }
   | { type: 'setCount'; id: string; value: string }
+  | { type: 'setLots'; id: string; lots: Lot[] }
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
   | { type: 'replace'; state: State }
@@ -38,8 +41,8 @@ function reducer(state: State, action: Action): State {
     case 'replace':
       return action.state;
     case 'reset':
-      if (action.mode === 'products') return { products: [], lastCount: action.date, counts: {}, ordered: {} };
-      return { ...state, products: state.products.map((p) => ({ ...p, qty: 0 })), counts: {}, ordered: {} };
+      if (action.mode === 'products') return { products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {} };
+      return { ...state, products: state.products.map((p) => ({ ...p, qty: 0, lots: [] })), counts: {}, ordered: {}, countLots: {} };
     case 'addMany':
       return { ...state, products: [...state.products, ...action.products] };
     case 'add':
@@ -57,8 +60,17 @@ function reducer(state: State, action: Action): State {
         ...state,
         products: state.products.map((p) => (p.id === action.id ? { ...p, archived: true } : p)),
       };
-    case 'setCount':
-      return { ...state, counts: { ...state.counts, [action.id]: action.value } };
+    case 'setCount': {
+      // Typing a number by hand drops the batch breakdown for that product.
+      const { [action.id]: _drop, ...rest } = state.countLots ?? {};
+      return { ...state, counts: { ...state.counts, [action.id]: action.value }, countLots: rest };
+    }
+    case 'setLots': {
+      const lots = action.lots;
+      const countLots = { ...(state.countLots ?? {}), [action.id]: lots };
+      const counts = lots.length ? { ...state.counts, [action.id]: String(lots.reduce((s, l) => s + l.qty, 0)) } : state.counts;
+      return { ...state, countLots, counts };
+    }
     case 'toggleOrdered':
       return { ...state, ordered: { ...state.ordered, [action.id]: !state.ordered[action.id] } };
     case 'finishInventory': {
@@ -66,9 +78,10 @@ function reducer(state: State, action: Action): State {
         const raw = state.counts[p.id];
         if (p.archived || raw == null || raw === '') return p;
         const qty = Number(raw);
-        return { ...p, qty, hist: [...p.hist.filter((h) => h.date !== action.date), { date: action.date, qty }] };
+        const lots = (state.countLots?.[p.id] ?? []).filter((l) => l.qty > 0);
+        return { ...p, qty, lots, hist: [...p.hist.filter((h) => h.date !== action.date), { date: action.date, qty }] };
       });
-      return { ...state, products, lastCount: action.date, counts: {}, ordered: {} };
+      return { ...state, products, lastCount: action.date, counts: {}, ordered: {}, countLots: {} };
     }
   }
 }
@@ -85,6 +98,7 @@ interface Store {
   updateProduct: (id: string, patch: Partial<ProductDraft>) => void;
   archiveProduct: (id: string) => void;
   setCount: (id: string, value: string) => void;
+  setLots: (id: string, lots: Lot[]) => void;
   finishInventory: () => void;
   resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
@@ -233,6 +247,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       updateProduct: (id, patch) => dispatch({ type: 'update', id, patch }),
       archiveProduct: (id) => dispatch({ type: 'archive', id }),
       setCount: (id, value) => dispatch({ type: 'setCount', id, value }),
+      setLots: (id, lots) => dispatch({ type: 'setLots', id, lots }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
       resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),

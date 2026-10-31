@@ -3,6 +3,7 @@ import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
 import { TabBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
+import { LotEditor, LotToggle } from '../../components/Lots';
 
 /** Shown instead of the count list when the warehouse has no products. */
 export function InventoryEmpty() {
@@ -75,7 +76,7 @@ export function PhoneInventory() {
             </div>
             <ul className="rows">
               {g.items.map((p) => (
-                <li key={p.id} className="inv-row">
+                <li key={p.id} className="inv-row" style={{ flexWrap: 'wrap' }}>
                   {p.image && <Thumb src={p.image} size="xs" />}
                   <span className="stack-2" style={{ flex: 1 }}>
                     <label htmlFor={`inw-${p.id}`} className="row-name">
@@ -84,9 +85,13 @@ export function PhoneInventory() {
                     <span className="code">
                       {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                     </span>
+                    <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`lots-${p.id}`} />
                   </span>
                   {!p.uncounted && <SameButton p={p} onClick={() => m.same(p)} />}
                   <CountInput id={`inw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
+                  {m.isExpanded(p) && (
+                    <LotEditor id={`lots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                  )}
                 </li>
               ))}
             </ul>

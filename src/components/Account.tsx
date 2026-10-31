@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { useStore } from '../store';
 import { Icon } from './Icon';
@@ -48,6 +49,9 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <Link to="/terminy" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
+            Terminy i otwarte butelki
+          </Link>
           <button
             type="button"
             className="btn btn--ghost btn--block account__danger"

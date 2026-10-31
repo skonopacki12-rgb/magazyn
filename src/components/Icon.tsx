@@ -25,6 +25,13 @@ const PATHS = {
   check: <path d="M5 12l5 5 9-10" />,
   chevronRight: <path d="M9 6l6 6-6 6" />,
   chevronLeft: <path d="M15 6l-6 6 6 6" />,
+  chevronDown: <path d="M6 9l6 6 6-6" />,
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
   user: (
     <>
       <circle cx="12" cy="8" r="4" />

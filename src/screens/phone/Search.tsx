@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon';
 import { SearchField } from '../../components/SearchField';
 import { TabBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
+import { ExpiryBanner } from '../ExpiryScreen';
 import { QtySmall, Qty, StatusBadge, StatusBand } from '../../components/Status';
 import { catLabel } from '../../lib/catalog';
 import { useStockSearch } from '../../lib/useStockSearch';
@@ -43,6 +44,7 @@ export function PhoneSearch() {
       </header>
 
       <main className="phone__main">
+        {!hasQuery && <ExpiryBanner />}
         {!hasQuery && needs.length > 0 && (
           <Link to="/zamowienia" className="banner">
             <span className="banner__icon">
