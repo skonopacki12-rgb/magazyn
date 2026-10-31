@@ -1,4 +1,5 @@
 import { packSizeOf } from '../../lib/pack';
+import { UnitFixBanner } from '../../components/UnitFix';
 import { bottleQty } from '../../lib/volume';
 import { useState } from 'react';
 import { ScanButton, ScanDialog } from '../../components/Scanner';
@@ -84,6 +85,7 @@ export function PhoneInventory() {
           </p>
         </div>
         <Progress m={m} variant="card" />
+        <UnitFixBanner />
         <ScanButton onClick={() => setScanning(true)} label="Skanuj butelki (+1 za skan)" />
         <Link to="/inwentaryzacja/polki" className="catalog-cta" style={{ padding: '10px 14px' }}>
           <Icon name="shelf" size={20} />

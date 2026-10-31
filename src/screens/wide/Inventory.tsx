@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { UnitFixBanner } from '../../components/UnitFix';
 import { bottleQty } from '../../lib/volume';
 import { ScanButton, ScanDialog } from '../../components/Scanner';
 import { packSizeOf } from '../../lib/pack';
@@ -44,6 +45,7 @@ export function TabletInventory() {
             <Progress m={m} variant="plain" />
           </div>
         </div>
+        <UnitFixBanner />
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <Segmented m={m} />
           <ScanButton onClick={() => setScanning(true)} label="Skanuj butelki" />

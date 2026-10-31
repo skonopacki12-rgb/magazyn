@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { volumeOf } from './lib/volume';
+import { unitFor } from './lib/catalog';
 import { orderUnitOf } from './lib/units';
 import { loadCopy, saveCopy } from './lib/offline';
 import { mergeValue } from './lib/merge';
@@ -71,6 +73,7 @@ type Action =
   | { type: 'setLots'; id: string; lots: Lot[] }
   | { type: 'setTraining'; training: Training | null }
   | { type: 'setDraft'; id: string; line: DraftLine | null }
+  | { type: 'fixUnits' }
   | { type: 'placeOrder'; lines: { productId: string; qty: number }[]; at: string }
   | { type: 'receive'; pendingId: string; parts: Receipt[]; at: string }
   | { type: 'cancelPending'; pendingId: string }
@@ -116,6 +119,65 @@ function countFromShelf(state: State, products: Product[], pid: string, delta: n
   return { counts: { ...counts, [pid]: String(Math.max(0, Number(had) + delta)) }, countLots };
 }
 
+export function unitFixes(products: Product[]): { p: Product; unit: Unit }[] {
+  return products.flatMap((p) => {
+    if (p.archived || !p.catalogId) return [];
+    const unit = unitFor(p);
+    return unit !== p.unit ? [{ p, unit }] : [];
+  });
+}
+
+/**
+ * Switches products to their catalog unit and converts amounts. From ml to pieces/packs the amount
+ * is divided by the pack content (200 ml mixer, 100 g dried fruit, 1 kg puree); for accessories the
+ * size isn't the content, so amounts stay and the minimum becomes 1.
+ */
+function fixUnits(state: State): State {
+  const fixes = new Map(unitFixes(state.products).map((f) => [f.p.id, f.unit]));
+  if (!fixes.size) return state;
+  const conv = (p: Product, unit: Unit) => {
+    const v = volumeOf(p);
+    const div = p.unit === 'ml' && unit !== 'ml' && p.cat !== 'akcesoria' && v && v.value > 1 ? v.value : 1;
+    const q = (n: number) => (n > 0 ? Math.max(1, Math.round(n / div)) : 0);
+    const minQ = (n: number) => (n > 0 ? (div > 1 ? q(n) : unit === 'ml' ? n : 1) : 0);
+    return { q, minQ, div };
+  };
+  const products = state.products.map((p) => {
+    const unit = fixes.get(p.id);
+    if (!unit) return p;
+    const { q, minQ } = conv(p, unit);
+    return {
+      ...p,
+      unit,
+      qty: q(p.qty),
+      min: minQ(p.min),
+      hist: p.hist.map((h) => ({ ...h, qty: q(h.qty) })),
+      lots: (p.lots ?? []).map((l) => ({ ...l, qty: q(l.qty) })).filter((l) => l.qty > 0),
+    };
+  });
+  const counts = { ...state.counts };
+  const countLots = { ...(state.countLots ?? {}) };
+  for (const p of state.products) {
+    const unit = fixes.get(p.id);
+    if (!unit) continue;
+    const { q } = conv(p, unit);
+    if (counts[p.id]) counts[p.id] = String(q(Number(counts[p.id])));
+    if (countLots[p.id]) countLots[p.id] = countLots[p.id].map((l) => ({ ...l, qty: q(l.qty) })).filter((l) => l.qty > 0);
+  }
+  const pending = (state.pending ?? []).map((x) => {
+    const p = state.products.find((y) => y.id === x.productId);
+    const unit = fixes.get(x.productId);
+    if (!p || !unit) return x;
+    const { q, div } = conv(p, unit);
+    const { perUnit: _drop, ...rest } = x;
+    // Ordered in bottles/pieces already (perUnit) and nothing to divide by → keep the ordered number.
+    return { ...rest, qty: div > 1 ? q(x.qty * (x.perUnit ?? 1)) : x.qty };
+  });
+  const { orderDraft: _d, ...rest } = state;
+  const orderDraft = Object.fromEntries(Object.entries(state.orderDraft ?? {}).filter(([id]) => !fixes.has(id)));
+  return { ...rest, products, counts, countLots, pending, orderDraft };
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'replace':
@@ -154,6 +216,8 @@ function reducer(state: State, action: Action): State {
       const { [action.id]: _old, ...rest } = state.orderDraft ?? {};
       return { ...state, orderDraft: action.line ? { ...rest, [action.id]: action.line } : rest };
     }
+    case 'fixUnits':
+      return fixUnits(state);
     case 'placeOrder': {
       const added = action.lines
         .filter((l) => l.qty > 0)
@@ -284,7 +348,10 @@ interface Store {
   needs: StockedProduct[];
   addProduct: (draft: ProductDraft) => string;
   /** Adds catalog items as new products (stock 0). Returns how many were added. */
-  addFromCatalog: (items: CatalogItem[], opts: { min: number; unit: Unit }) => number;
+  addFromCatalog: (items: CatalogItem[], opts: { min: number; unit: Unit | 'auto' }) => number;
+  /** Products whose unit doesn't match the catalog rule (see unitFor). */
+  unitFixes: { p: Product; unit: Unit }[];
+  fixUnits: () => void;
   updateProduct: (id: string, patch: Partial<ProductDraft>) => void;
   archiveProduct: (id: string) => void;
   setCount: (id: string, value: string) => void;
@@ -522,7 +589,7 @@ function SyncedStore({
             code: it.code,
             name: it.name,
             cat: it.cat,
-            unit,
+            unit: unit === 'auto' ? unitFor(it) : unit,
             min,
             qty: 0,
             hist: [],
@@ -539,6 +606,8 @@ function SyncedStore({
         if (fresh.length) dispatch({ type: 'addMany', products: fresh });
         return fresh.length;
       },
+      unitFixes: unitFixes(state.products),
+      fixUnits: () => dispatch({ type: 'fixUnits' }),
       updateProduct: (id, patch) => dispatch({ type: 'update', id, patch }),
       archiveProduct: (id) => dispatch({ type: 'archive', id }),
       setCount: (id, value) => dispatch({ type: 'setCount', id, value }),

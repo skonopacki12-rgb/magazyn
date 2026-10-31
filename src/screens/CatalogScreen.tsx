@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { UnitFixBanner } from '../components/UnitFix';
 import { money } from '../lib/money';
 import { Link, useNavigate } from 'react-router-dom';
 import { CategoryChips, type CatFilter } from '../components/CategoryChips';
@@ -26,7 +27,7 @@ export function CatalogScreen() {
   const [cat, setCat] = useState<CatFilter>('all');
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [min, setMin] = useState('2');
-  const [unit, setUnit] = useState<Unit>('szt.');
+  const [unit, setUnit] = useState<Unit | 'auto'>('auto');
   const [added, setAdded] = useState<number | null>(null);
 
   const inStock = useMemo(() => new Set(products.map((p) => p.catalogId).filter(Boolean)), [products]);
@@ -92,6 +93,7 @@ export function CatalogScreen() {
 
       <main className="catalog__main">
         <div className="catalog__inner" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <UnitFixBanner />
           {added !== null && (
             <div className="catalog__done" role="status">
               <Icon name="check" size={20} />
@@ -160,7 +162,8 @@ export function CatalogScreen() {
               <label htmlFor="kat-jm" className="hint" style={{ fontWeight: 600, color: 'var(--ink)' }}>
                 Licz w
               </label>
-              <select id="kat-jm" className="select" style={{ height: 44, width: 96 }} value={unit} onChange={(e) => setUnit(e.target.value as Unit)}>
+              <select id="kat-jm" className="select" style={{ height: 44, width: 100 }} value={unit} onChange={(e) => setUnit(e.target.value as Unit | 'auto')}>
+                <option value="auto">auto</option>
                 {UNITS.map((u) => (
                   <option key={u} value={u}>
                     {u}
