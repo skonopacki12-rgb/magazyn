@@ -1,12 +1,15 @@
 import { joinParts, mergeLog, PART_NAMES, pickPart, splitState, validPart, type PartName } from '../src/lib/parts';
 import { SEED_LAST_COUNT, SEED_PRODUCTS } from '../src/lib/seed';
 import { hashPassword, PBKDF2_ITERATIONS, randomHex, safeEqual, sha256 } from './crypto';
+import { dailyReminders, notifyUser, reminderFor, vapidKeys } from './reminders';
 
 interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   /** Optional comma-separated e-mails that may still register after the first account exists. */
   ALLOWED_EMAILS?: string;
+  /** Optional VAPID contact (mailto: or https:), defaults to the app's address. */
+  PUSH_SUBJECT?: string;
 }
 
 /**
@@ -228,6 +231,22 @@ async function putParts(env: Env, req: Request) {
   return json({ versions, conflicts, merged });
 }
 
+/** Contact for push services (VAPID "sub"): the app's own address. */
+const pushSubject = (req: Request | null, env: Env) => env.PUSH_SUBJECT ?? (req ? new URL(req.url).origin : 'https://magazyn.workers.dev');
+
+async function pushSubscribe(env: Env, req: Request) {
+  const u = await requireUser(env, req);
+  const b = await body<{ endpoint?: string; keys?: { p256dh?: string; auth?: string } }>(req);
+  if (!b.endpoint?.startsWith('https://') && !b.endpoint?.startsWith('http://localhost')) throw new HttpError(400, 'Nieprawidłowa subskrypcja.');
+  if (!b.keys?.p256dh || !b.keys?.auth) throw new HttpError(400, 'Brak kluczy subskrypcji.');
+  await env.DB.prepare(
+    'INSERT INTO push_subscriptions (endpoint, user_id, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth',
+  )
+    .bind(b.endpoint, u.id, b.keys.p256dh, b.keys.auth, Date.now())
+    .run();
+  return json({ ok: true });
+}
+
 async function api(req: Request, env: Env, path: string): Promise<Response> {
   const route = `${req.method} ${path}`;
   // Basic CSRF guard: state-changing requests must come from this origin.
@@ -242,6 +261,21 @@ async function api(req: Request, env: Env, path: string): Promise<Response> {
       return login(env, req);
     case 'POST /api/auth/logout':
       return logout(env, req);
+    case 'GET /api/push/key':
+      return json({ publicKey: (await vapidKeys(env)).publicKey });
+    case 'POST /api/push/subscribe':
+      return pushSubscribe(env, req);
+    case 'POST /api/push/unsubscribe': {
+      const u = await requireUser(env, req);
+      const b = await body<{ endpoint?: string }>(req);
+      await env.DB.prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?').bind(b.endpoint ?? '', u.id).run();
+      return json({ ok: true });
+    }
+    case 'POST /api/push/test': {
+      const u = await requireUser(env, req);
+      const msg = (await reminderFor(env, u.id)) ?? { title: 'Magazyn', body: 'Powiadomienia działają — nic dziś nie wymaga uwagi.', url: '/' };
+      return json(await notifyUser(env, u.id, msg, pushSubject(req, env)));
+    }
     case 'GET /api/auth/config':
       return json({ registration: await registrationOpen(env) });
     case 'GET /api/auth/me': {
@@ -269,5 +303,14 @@ export default {
       console.error(e);
       return json({ error: 'Błąd serwera. Spróbuj ponownie.' }, 500);
     }
+  },
+  /** Daily reminders (cron in wrangler.jsonc). */
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(
+      dailyReminders(env, pushSubject(null, env)).catch((e) => {
+        console.error('daily reminders failed', e);
+        throw e;
+      }),
+    );
   },
 } satisfies ExportedHandler<Env>;

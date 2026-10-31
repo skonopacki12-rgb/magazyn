@@ -402,7 +402,11 @@ function SyncedStore({
         const patch: Record<string, unknown> = {};
         for (const k of PARTS[p]) {
           const theirs = (c.data as Record<string, unknown>)[k];
-          const res = mergeValue((savedRef.current as unknown as Record<string, unknown>)[k], (stateRef.current as unknown as Record<string, unknown>)[k], theirs);
+          const res = mergeValue(
+            (savedRef.current as unknown as Record<string, unknown>)[k],
+            (stateRef.current as unknown as Record<string, unknown>)[k],
+            theirs,
+          );
           clash ||= res.clash;
           patch[k] = same(res.value, theirs) ? theirs : res.value;
           saved = { ...saved, [k]: theirs } as State;

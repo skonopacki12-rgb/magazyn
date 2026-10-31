@@ -10,5 +10,5 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts", "../src/lib/seed.ts", "../src/lib/types.ts", "../src/lib/parts.ts"]
+  "include": ["./**/*.ts", "../src/lib/seed.ts", "../src/lib/types.ts", "../src/lib/parts.ts", "../src/lib/fifo.ts", "../src/lib/stock.ts", "../src/lib/text.ts"]
 }

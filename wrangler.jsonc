@@ -16,5 +16,7 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Daily push reminders at 06:17 UTC (07:17 in winter / 08:17 in summer, Polish time).
+  "triggers": { "crons": ["17 6 * * *"] },
   "observability": { "enabled": true }
 }

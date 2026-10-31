@@ -25,7 +25,14 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
     };
   }, [open]);
 
-  const syncText = sync === 'saving' ? 'Zapisywanie…' : sync === 'offline' ? 'Offline — zapisze się po połączeniu' : sync === 'error' ? 'Nie zapisano — błąd' : 'Zapisano w chmurze';
+  const syncText =
+    sync === 'saving'
+      ? 'Zapisywanie…'
+      : sync === 'offline'
+        ? 'Offline — zapisze się po połączeniu'
+        : sync === 'error'
+          ? 'Nie zapisano — błąd'
+          : 'Zapisano w chmurze';
 
   return (
     <div className="account" ref={ref}>
@@ -49,6 +56,9 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <Link to="/przypomnienia" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
+            Przypomnienia
+          </Link>
           <Link to="/raporty" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
             Raport i zużycie
           </Link>

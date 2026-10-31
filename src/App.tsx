@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { RemindersScreen } from './screens/RemindersScreen';
 import { ReportScreen } from './screens/ReportScreen';
 import { CatalogPriceSync } from './components/CatalogPriceSync';
 import { SyncNotice } from './components/Account';
@@ -58,6 +59,7 @@ export function App() {
         <Route path="/szkolenie" element={<TrainingScreen />} />
         <Route path="/polki" element={<ShelvesScreen />} />
         <Route path="/kopia" element={<BackupScreen />} />
+        <Route path="/przypomnienia" element={<RemindersScreen />} />
         <Route path="/raporty" element={<ReportScreen />} />
         <Route path="/inwentaryzacja/polki" element={<ShelfCountList />} />
         <Route path="/inwentaryzacja/polki/:name" element={<ShelfCount />} />

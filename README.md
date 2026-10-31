@@ -16,6 +16,17 @@ Działa na telefonie, tablecie i laptopie.
   a stan magazynu — w lokalnej kopii. Można pracować normalnie; po powrocie internetu zmiany zapisują się
   same i scalają ze zmianami z innych urządzeń. Wylogowanie usuwa lokalną kopię.
 
+## Przypomnienia (powiadomienia push)
+
+Menu konta → **Przypomnienia** (`/przypomnienia`): „Włącz przypomnienia” na danym urządzeniu i „Wyślij testowe”.
+Codziennie o 06:17 UTC (7:17 zimą / 8:17 latem) cron Workera sprawdza magazyn i wysyła powiadomienie tylko,
+gdy coś wymaga uwagi: partie po terminie / z kończącym się terminem, produkty do zamówienia, nierozliczone
+szkolenie. Kliknięcie otwiera właściwy ekran.
+- iPhone/iPad: działa w aplikacji dodanej do ekranu głównego (iOS 16.4+).
+- Web Push bez zewnętrznych usług (`worker/push.ts`: VAPID ES256 + szyfrowanie RFC 8291). Klucze VAPID Worker
+  generuje sam przy pierwszym użyciu i trzyma w D1 (`app_keys`) — nie trzeba ustawiać sekretów.
+  Opcjonalnie zmienna `PUSH_SUBJECT` (kontakt `mailto:`/`https:` dla usług push).
+
 ## Wdrożenie na Cloudflare
 
 Potrzebne: konto Cloudflare i Node.js 20+.
