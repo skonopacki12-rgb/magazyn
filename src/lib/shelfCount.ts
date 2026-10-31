@@ -1,16 +1,19 @@
 import { newLot } from './fifo';
 import { pickOrder, type Move } from './training';
 import type { Lot, Product, ShelfDef } from './types';
+import { bottleCount, bottlesOf, orderUnitOf } from './units';
 
 /** One product as found on a shelf: what the lots say and how many slots it has in the layout. */
 export interface ShelfItem {
   productId: string;
   /** Units on this shelf according to lots. */
   lotQty: number;
-  /** Slots holding this product in the shelf layout. */
+  /** Slots (bottles) holding this product in the shelf layout. */
   slots: number;
   /** True when some lot says this product is on the shelf. */
   hasLots: boolean;
+  /** Bottles on this shelf according to lots (an opened bottle in ml is still one bottle). */
+  bottles: number;
   /** Best current guess of what is on the shelf: lots if known, otherwise slots. */
   expected: number;
 }
@@ -30,7 +33,7 @@ export function shelfContents(products: Product[], shelf: string, layout?: Shelf
     const here = lotsOn(p, shelf);
     const lotQty = here.reduce((s, l) => s + l.qty, 0);
     const n = slots.get(id) ?? 0;
-    out.push({ productId: id, lotQty, slots: n, hasLots: here.length > 0, expected: here.length ? lotQty : n });
+    out.push({ productId: id, lotQty, slots: n, bottles: bottleCount(p, here, lotQty), hasLots: here.length > 0, expected: here.length ? lotQty : n * orderUnitOf(p).perUnit });
   }
   return out;
 }
@@ -92,16 +95,19 @@ export function adjustOnShelf(
   if (layout) {
     const rows = layout.rows.map((r) => ({ ...r, slots: [...r.slots] }));
     if (a.slot && rows[a.slot.row]?.slots[a.slot.index] === p.id) rows[a.slot.row].slots[a.slot.index] = null;
+    // Slots are bottles: 1 ml more of an opened bottle doesn't take another slot.
+    const hereAfter = lots.filter((l) => (l.shelf ?? '') === a.shelf);
+    const want = hereAfter.length ? bottleCount(p, hereAfter, hereAfter.reduce((s, l) => s + l.qty, 0)) : bottlesOf(p, target);
     let have = rows.reduce((s, r) => s + r.slots.filter((x) => x === p.id).length, 0);
-    for (let r = rows.length - 1; r >= 0 && have > target; r--)
-      for (let i = rows[r].slots.length - 1; i >= 0 && have > target; i--)
+    for (let r = rows.length - 1; r >= 0 && have > want; r--)
+      for (let i = rows[r].slots.length - 1; i >= 0 && have > want; i--)
         if (rows[r].slots[i] === p.id) {
           rows[r].slots[i] = null;
           have--;
         }
     // Bottles counted on the shelf take free slots in the layout (as far as there are free slots).
-    for (let r = 0; r < rows.length && have < target; r++)
-      for (let i = 0; i < rows[r].slots.length && have < target; i++)
+    for (let r = 0; r < rows.length && have < want; r++)
+      for (let i = 0; i < rows[r].slots.length && have < want; i++)
         if (rows[r].slots[i] === null) {
           rows[r].slots[i] = p.id;
           have++;

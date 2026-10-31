@@ -50,6 +50,18 @@ interface PreviewProps {
 }
 
 /** "Real-life" view of a shelf: rows as boards with product photos standing in their slots. */
+/** Name without brand, size and packaging, so it fits under a narrow bottle ("Ciastko Toffi"). */
+export function shortName(name: string): string {
+  const s = name
+    .replace(/\((PET|szkło|szklana|butelka)\)/gi, '')
+    .replace(/\b\d+([,.]\d+)?\s?(ml|l|g|kg|cl)\b/gi, '')
+    .replace(/\b(Lord of Taste|Maison Routin|1883)\b/gi, '')
+    .replace(/^\s*(Syrop|Sos|Puree|Pure)\s+/i, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  return s || name;
+}
+
 export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', onSlot, over }: PreviewProps) {
   return (
     <div className={`rack rack--${size}`} role="img" aria-label={`Podgląd półki ${shelf.name}`}>
@@ -77,7 +89,7 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
                   ) : p ? (
                     <span className="rack__bottle" aria-hidden="true">
                       <span className="rack__neck" />
-                      <span className="rack__body">{captions ? '' : p.name}</span>
+                      <span className="rack__body">{captions ? '' : shortName(p.name)}</span>
                     </span>
                   ) : (
                     <span className="rack__hole" aria-hidden="true" />
@@ -102,7 +114,7 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
                       )}
                     </span>
                   )}
-                  {captions && size !== 'sm' && <span className="rack__cap">{p ? p.name : ''}</span>}
+                  {captions && size !== 'sm' && p && <span className="rack__cap">{shortName(p.name)}</span>}
                 </Tag>
               );
             })}

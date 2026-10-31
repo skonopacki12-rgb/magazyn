@@ -164,7 +164,8 @@ export function ShelfCount() {
                 <span className="code">
                   {p.code}
                   {it.hasLots ? '' : ' · wg ułożenia'}
-                  {layout && it.hasLots && it.slots !== it.lotQty ? ` · miejsc na półce ${it.slots}` : ''}
+                  {it.bottles !== it.lotQty && it.hasLots ? ` · ${it.bottles} but.` : ''}
+                  {layout && it.hasLots && it.slots !== it.bottles ? ` · miejsc na półce ${it.slots}` : ''}
                 </span>
               </span>
               <span className="sc-qty">

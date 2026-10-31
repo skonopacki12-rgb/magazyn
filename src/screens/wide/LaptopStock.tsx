@@ -112,7 +112,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                             <span style={{ display: 'flex' }}>
                               <StatusBadge p={p} />
                             </span>
-                            <span className={`t-num t-right ${p.needs ? 'is-strong' : 'is-quiet'}`}>{p.needs ? `${p.toOrder} ${p.unit}` : '—'}</span>
+                            <span className={`t-num t-right ${p.needs ? 'is-strong' : 'is-quiet'}`}>{p.needs ? `${p.orderQty} ${p.orderLabel}` : '—'}</span>
                           </button>
                         </li>
                       );

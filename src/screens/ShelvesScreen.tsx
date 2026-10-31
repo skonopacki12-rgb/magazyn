@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { bottleCount } from '../lib/units';
 import { formatDate, todayIso } from '../lib/text';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -140,7 +141,7 @@ export function ShelfEditor() {
   const [mode, setMode] = useState<Mode>('layout');
   const [pick, setPick] = useState<{ row: number; slot: number } | null>(null);
   const [showStock, setShowStock] = useState(false);
-  const [captions, setCaptions] = useState(false);
+  const [captions, setCaptions] = useState(true);
 
   if (!shelf)
     return (
@@ -177,10 +178,10 @@ export function ShelfEditor() {
       const n = (placedHere.get(pid) ?? 0) + 1;
       placedHere.set(pid, n);
       const p = byId(pid);
-      if (!p || n + (placedElsewhere.get(pid) ?? 0) > p.qty) over.add(`${ri}-${si}`);
+      if (!p || n + (placedElsewhere.get(pid) ?? 0) > bottleCount(p)) over.add(`${ri}-${si}`);
     }),
   );
-  const freeOf = (pid: string) => (byId(pid)?.qty ?? 0) - (placedElsewhere.get(pid) ?? 0) - (placedHere.get(pid) ?? 0);
+  const freeOf = (pid: string) => { const p = byId(pid); return (p ? bottleCount(p) : 0) - (placedElsewhere.get(pid) ?? 0) - (placedHere.get(pid) ?? 0); };
   const clearOver = () => save({ rows: shelf.rows.map((r, ri) => ({ ...r, slots: r.slots.map((pid, si) => (over.has(`${ri}-${si}`) ? null : pid)) })) });
 
   // Products that sit on this shelf according to lots (FIFO data) — suggested first.

@@ -78,6 +78,8 @@ export interface Pending {
   qty: number;
   /** ISO timestamp of "Dodaj jako oczekujące". */
   orderedAt: string;
+  /** Stock units per ordered unit (e.g. 700 when ordering 700 ml bottles of a product counted in ml). */
+  perUnit?: number;
 }
 
 /** Manual changes to the order list: quantity and whether to order. Extra products can be added. */
@@ -114,6 +116,9 @@ export interface StockStatus {
   needs: boolean;
   /** Units already ordered and on their way (pending deliveries). */
   incoming: number;
+  /** What to order in whole packages (bottles / full cases) and its label. */
+  orderQty: number;
+  orderLabel: string;
   toOrder: number;
 }
 

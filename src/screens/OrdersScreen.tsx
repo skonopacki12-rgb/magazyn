@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { orderUnitOf } from '../lib/units';
 import { money } from '../lib/money';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -163,6 +164,7 @@ function DraftTab({ m, placed, onShowPending }: { m: ReturnType<typeof useOrderD
 function DraftRow({ l, m }: { l: OrderLine; m: ReturnType<typeof useOrderDraft> }) {
   const p = l.p;
   const id = `ord-${p.id}`;
+  const ou = orderUnitOf(p);
   return (
     <li className={`draft${l.include ? '' : ' is-skipped'}`}>
       <input
@@ -183,7 +185,26 @@ function DraftRow({ l, m }: { l: OrderLine; m: ReturnType<typeof useOrderDraft> 
         </span>
       </label>
       <div className="draft__qty">
-        <Stepper id={`${id}-q`} value={l.qty} small unit={p.unit} label={QTY_LABELS} onChange={(v) => m.edit(l, { qty: Number(v) || 0, include: true })} />
+        <Stepper
+          id={`${id}-q`}
+          value={l.qty}
+          small
+          step={ou.step}
+          unit={ou.label}
+          label={QTY_LABELS}
+          onChange={(v) => m.edit(l, { qty: Number(v) || 0, include: true })}
+        />
+        {ou.perUnit > 1 && l.qty > 0 && <span className="hint">= {l.qty * ou.perUnit} ml</span>}
+        {ou.step > 1 && l.qty > 0 &&
+          (l.qty % ou.step ? (
+            <span className="hint" style={{ color: '#8a5a00' }}>
+              niepełna zgrzewka
+            </span>
+          ) : (
+            <span className="hint">
+              = {l.qty / ou.step} {plural(l.qty / ou.step, 'zgrzewka', 'zgrzewki', 'zgrzewek')}
+            </span>
+          ))}
         {l.extra && (
           <button type="button" className="icon-btn icon-btn--muted" aria-label={`Usuń z zamówienia: ${p.name}`} onClick={() => m.remove(l)}>
             <Icon name="close" size={18} />
@@ -251,6 +272,7 @@ function PendingTab() {
   const { pending, byId, receive, cancelPending } = useStore();
   const [forms, setForms] = useState<Record<string, Receipt[]>>({});
   const [received, setReceived] = useState<string[]>([]);
+  const label = (x: Pending) => ((x.perUnit ?? 1) > 1 ? 'but.' : (byId(x.productId)?.unit ?? ''));
   const partsFor = (x: Pending): Receipt[] => forms[x.id] ?? [{ qty: x.qty, shelf: lastShelf(byId(x.productId)), expiresAt: '' }];
   const setParts = (x: Pending, parts: Receipt[]) => setForms((f) => ({ ...f, [x.id]: parts }));
   const setPart = (x: Pending, i: number, patch: Partial<Receipt>) =>
@@ -275,7 +297,7 @@ function PendingTab() {
     });
     const lines = parts.map(
       (r) =>
-        `${p?.name ?? x.productId}: +${r.qty} ${p?.unit ?? ''}${r.shelf ? ` → półka ${r.shelf}` : ''}${r.expiresAt ? ` · do ${formatDate(r.expiresAt)}` : ''}`,
+        `${p?.name ?? x.productId}: +${r.qty} ${label(x)}${r.shelf ? ` → półka ${r.shelf}` : ''}${r.expiresAt ? ` · do ${formatDate(r.expiresAt)}` : ''}`,
     );
     setReceived((prev) => [...lines, ...prev].slice(0, 8));
   };
@@ -330,7 +352,7 @@ function PendingTab() {
                     <span className="stack-2" style={{ flex: 1 }}>
                       <span className="row-name">{p.name}</span>
                       <span className="code">
-                        {p.code} · zamówiono {x.qty} {p.unit} · na stanie {p.qty}
+                        {p.code} · zamówiono {x.qty} {label(x)} · na stanie {p.qty} {p.unit}
                       </span>
                     </span>
                     <span className="badge is-new">Oczekuje</span>
@@ -364,7 +386,7 @@ function PendingTab() {
                             id={`rq-${x.id}-${i}`}
                             value={f.qty}
                             small
-                            unit={p.unit}
+                            unit={label(x)}
                             label={QTY_LABELS}
                             onChange={(v) => setPart(x, i, { qty: Number(v) || 0 })}
                           />
@@ -409,7 +431,7 @@ function PendingTab() {
                       style={sum < x.qty ? { color: '#8a5a00', fontWeight: 600 } : sum > x.qty ? { color: 'var(--out-bg)', fontWeight: 600 } : undefined}
                     >
                       {sum < x.qty
-                        ? `Razem ${sum} z ${x.qty} — brakujące ${x.qty - sum} ${p.unit} zostaną jako oczekujące`
+                        ? `Razem ${sum} z ${x.qty} — brakujące ${x.qty - sum} ${label(x)} zostaną jako oczekujące`
                         : sum > x.qty
                           ? `Razem ${sum} — więcej niż zamówiono (${x.qty})`
                           : many
@@ -422,13 +444,13 @@ function PendingTab() {
                     <button
                       type="button"
                       className="btn btn--quiet"
-                      onClick={() => window.confirm(`Anulować oczekujące: ${p.name} (${x.qty} ${p.unit})?`) && cancelPending(x.id)}
+                      onClick={() => window.confirm(`Anulować oczekujące: ${p.name} (${x.qty} ${label(x)})?`) && cancelPending(x.id)}
                     >
                       Anuluj zamówienie
                     </button>
                     <button type="button" className="btn btn--primary btn--md" disabled={sum <= 0} onClick={() => take(x)}>
                       <Icon name="check" size={18} />
-                      Przyjmij {sum} {p.unit}
+                      Przyjmij {sum} {label(x)}
                       {many ? ` (${parts.filter((r) => r.qty > 0).length} partie)` : ''}
                     </button>
                   </div>

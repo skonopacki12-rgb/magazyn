@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { orderUnitOf } from '../lib/units';
 import { Link } from 'react-router-dom';
 import type { StockedProduct } from '../lib/types';
 import { useStore } from '../store';
@@ -23,7 +24,7 @@ export function useOrderDraft() {
 
   const auto: OrderLine[] = needs.map((p) => ({
     p,
-    qty: draft[p.id]?.qty ?? p.toOrder,
+    qty: draft[p.id]?.qty ?? p.orderQty,
     include: draft[p.id]?.include ?? true,
     extra: false,
   }));
@@ -57,7 +58,7 @@ export function useOrderDraft() {
     copied,
     edit,
     remove: (l: OrderLine) => setDraft(l.p.id, null),
-    addExtra: (p: StockedProduct) => setDraft(p.id, { qty: Math.max(1, p.toOrder || 1), include: true, extra: true }),
+    addExtra: (p: StockedProduct) => setDraft(p.id, { qty: p.orderQty || orderUnitOf(p).step, include: true, extra: true }),
     inList: (id: string) => lines.some((l) => l.p.id === id),
     copy: () => {
       if (!codesText) return;
@@ -73,7 +74,7 @@ export function OrderSummary({ compact }: { compact?: boolean }) {
   const { needs, pending } = useStore();
   const out = needs.filter((p) => p.qty === 0);
   const low = needs.filter((p) => p.qty > 0);
-  const incoming = pending.reduce((s, x) => s + x.qty, 0);
+  const incoming = pending.length;
   const groups = [
     { key: 'out', label: `Brak w magazynie · ${out.length}`, status: { isOut: true, isLow: false }, items: out },
     { key: 'low', label: `Poniżej minimum · ${low.length}`, status: { isOut: false, isLow: true }, items: low },
@@ -100,8 +101,8 @@ export function OrderSummary({ compact }: { compact?: boolean }) {
                 <span className="order-item__end">
                   {!compact && <span className="order-item__verb">zamów</span>}
                   <span className="order-item__qty">
-                    <span className="order-item__n">{p.toOrder}</span>
-                    <span className="order-item__u">{p.unit}</span>
+                    <span className="order-item__n">{p.orderQty}</span>
+                    <span className="order-item__u">{p.orderLabel}</span>
                   </span>
                 </span>
               </li>

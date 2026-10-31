@@ -40,7 +40,7 @@ export async function reminderFor(env: Env, userId: string): Promise<{ title: st
     training?: unknown;
   };
   const incoming = new Map<string, number>();
-  for (const x of state.pending ?? []) incoming.set(x.productId, (incoming.get(x.productId) ?? 0) + x.qty);
+  for (const x of state.pending ?? []) incoming.set(x.productId, (incoming.get(x.productId) ?? 0) + x.qty * (x.perUnit ?? 1));
   const products = state.products.filter((p) => !p.archived).map((p) => withStatus(p, incoming.get(p.id) ?? 0));
   let expired = 0;
   let soon = 0;

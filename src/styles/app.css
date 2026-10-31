@@ -2491,15 +2491,31 @@ button.rack__slot:hover {
   text-align: center;
 }
 .rack__cap {
-  width: 100%;
-  margin-top: 2px;
+  /* Over the lower part of the bottle: wraps to up to 3 lines instead of being cut off. */
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  bottom: 2px;
+  z-index: 1;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
   overflow: hidden;
+  padding: 2px 2px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.88);
   font-size: 10px;
-  line-height: 12px;
+  font-weight: 600;
+  line-height: 11px;
   text-align: center;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ink-2);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  color: #1d2433;
+}
+.rack--lg .rack__cap {
+  font-size: 11px;
+  line-height: 12px;
 }
 .rack__board {
   height: 10px;

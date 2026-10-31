@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import { orderUnitOf } from './lib/units';
 import { loadCopy, saveCopy } from './lib/offline';
 import { mergeValue } from './lib/merge';
 import { LOG_LIMIT as PARTS_LOG_LIMIT, mergeLog, PART_NAMES, PARTS, partChanged, pickPart, type PartName } from './lib/parts';
@@ -137,7 +138,13 @@ function reducer(state: State, action: Action): State {
       return { ...state, orderDraft: action.line ? { ...rest, [action.id]: action.line } : rest };
     }
     case 'placeOrder': {
-      const added = action.lines.filter((l) => l.qty > 0).map((l) => ({ id: newLot().id, productId: l.productId, qty: l.qty, orderedAt: action.at }));
+      const added = action.lines
+        .filter((l) => l.qty > 0)
+        .map((l) => {
+          const p = state.products.find((x) => x.id === l.productId);
+          const perUnit = p ? orderUnitOf(p).perUnit : 1;
+          return { id: newLot().id, productId: l.productId, qty: l.qty, orderedAt: action.at, ...(perUnit > 1 ? { perUnit } : {}) };
+        });
       return { ...state, pending: [...(state.pending ?? []), ...added], orderDraft: {} };
     }
     case 'saveShelf': {
@@ -173,9 +180,12 @@ function reducer(state: State, action: Action): State {
       // One delivery line can be split into parts with different shelves / best-before dates.
       const pend = (state.pending ?? []).find((x) => x.id === action.pendingId);
       if (!pend) return state;
-      const parts = action.parts.map((r) => ({ ...r, qty: Math.max(0, r.qty) })).filter((r) => r.qty > 0);
+      // Quantities come in ordered units (bottles); stock may be kept in ml.
+      const per = pend.perUnit ?? 1;
+      const ordered = action.parts.map((r) => Math.max(0, r.qty));
+      const parts = action.parts.map((r, i) => ({ ...r, qty: ordered[i] * per })).filter((r) => r.qty > 0);
       const qty = parts.reduce((s, r) => s + r.qty, 0);
-      const left = pend.qty - qty;
+      const left = pend.qty - ordered.reduce((a, b) => a + b, 0);
       const pending = (state.pending ?? []).flatMap((x) => (x.id !== pend.id ? [x] : left > 0 ? [{ ...x, qty: left }] : []));
       let name = '';
       let unit = '';
@@ -465,7 +475,7 @@ function SyncedStore({
 
   const store = useMemo<Store>(() => {
     const incoming = new Map<string, number>();
-    for (const x of state.pending ?? []) incoming.set(x.productId, (incoming.get(x.productId) ?? 0) + x.qty);
+    for (const x of state.pending ?? []) incoming.set(x.productId, (incoming.get(x.productId) ?? 0) + x.qty * (x.perUnit ?? 1));
     const products = state.products.filter((p) => !p.archived).map((p) => withStatus(p, incoming.get(p.id) ?? 0));
     return {
       state,
