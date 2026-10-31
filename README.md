@@ -100,6 +100,17 @@ Po zakończeniu inwentaryzacji:
   Towar dochodzi do stanu jako nowa partia (zamknięta). Jeśli dotarło mniej, brakująca część zostaje
   jako oczekująca. Pozycję można też anulować. Dostawy trafiają do dziennika ruchów.
 
+## Zgrzewki
+
+Produkt może mieć **opakowanie zbiorcze** (pole w formularzu produktu, np. 12). Mixery Lord of Taste
+mają 12 automatycznie (folder: „tacka 12 szt.”).
+- W inwentaryzacji wpisujesz liczbę butelek i klikasz **„Rozłóż na zgrzewki po 12”** — np. 30 → 12 + 12 + 6.
+  Każda zgrzewka to siatka **3 × 4** butelek: klik w k-tą butelkę = k butelek w zgrzewce.
+  Partię można przełączyć na **Luzem**, dodać zgrzewkę albo butelki luzem; „Półka i data jak w 1.
+  dla wszystkich” kopiuje półkę i datę.
+- Każda zgrzewka to osobna partia (z półką i datą), więc działa w FIFO, szkoleniu i terminach.
+- Dostawa produktu w zgrzewkach sama rozkłada się na zgrzewki po 12.
+
 ## Układ półek (planogram)
 
 **Półki** (`/polki`, link w górnym pasku, ikona na telefonie i w menu konta):

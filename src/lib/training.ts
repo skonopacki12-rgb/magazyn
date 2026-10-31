@@ -134,7 +134,7 @@ export function buildTraining(products: Product[], input: string): Training {
   return { startedAt: new Date().toISOString(), stage: 'pick', input, lines, unknown, empty };
 }
 
-const lotKey = (l: Lot) => [l.shelf ?? '', l.open, l.openedAt ?? '', l.expiresAt ?? ''].join('|');
+const lotKey = (l: Lot) => (l.pack ? `case:${l.id}` : [l.shelf ?? '', l.open, l.openedAt ?? '', l.expiresAt ?? ''].join('|'));
 
 /** Adds a lot, merging it into an identical one (same shelf, state and dates). */
 function putLot(lots: Lot[], add: Lot): Lot[] {

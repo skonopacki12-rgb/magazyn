@@ -18,6 +18,8 @@ export interface Lot {
   expiresAt?: string;
   /** Shelf / location label, e.g. "A2" or "Bar – lodówka". */
   shelf?: string;
+  /** Units sit in one case (zgrzewka) — qty ≤ the product's packSize. */
+  pack?: boolean;
 }
 
 export interface Product {
@@ -43,6 +45,8 @@ export interface Product {
   catalogId?: string;
   /** FIFO batches recorded in the last finished inventory. */
   lots?: Lot[];
+  /** Units per case (zgrzewka / tacka), e.g. 12 for Lord of Taste mixers. */
+  packSize?: number;
 }
 
 /** One row of a shelf; each slot holds one product (bottle) or is empty. */
@@ -87,6 +91,8 @@ export interface CatalogItem {
   size: string;
   image: string | null;
   source: string;
+  /** Units per case, when the folder states it. */
+  packSize?: number;
 }
 
 export interface StockStatus {

@@ -248,7 +248,11 @@ function PendingTab() {
   const [received, setReceived] = useState<string[]>([]);
   const partsFor = (x: Pending): Receipt[] => forms[x.id] ?? [{ qty: x.qty, shelf: lastShelf(byId(x.productId)), expiresAt: '' }];
   const setParts = (x: Pending, parts: Receipt[]) => setForms((f) => ({ ...f, [x.id]: parts }));
-  const setPart = (x: Pending, i: number, patch: Partial<Receipt>) => setParts(x, partsFor(x).map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const setPart = (x: Pending, i: number, patch: Partial<Receipt>) =>
+    setParts(
+      x,
+      partsFor(x).map((r, j) => (j === i ? { ...r, ...patch } : r)),
+    );
 
   const byDay = new Map<string, Pending[]>();
   for (const x of [...pending].sort((a, b) => (a.orderedAt < b.orderedAt ? 1 : -1))) {
@@ -351,7 +355,14 @@ function PendingTab() {
                           <label htmlFor={`rq-${x.id}-${i}`} className="field__label">
                             {many ? 'Ilość' : 'Dostarczono'}
                           </label>
-                          <Stepper id={`rq-${x.id}-${i}`} value={f.qty} small unit={p.unit} label={QTY_LABELS} onChange={(v) => setPart(x, i, { qty: Number(v) || 0 })} />
+                          <Stepper
+                            id={`rq-${x.id}-${i}`}
+                            value={f.qty}
+                            small
+                            unit={p.unit}
+                            label={QTY_LABELS}
+                            onChange={(v) => setPart(x, i, { qty: Number(v) || 0 })}
+                          />
                         </div>
                         <div className="field" style={{ gap: 4 }}>
                           <label htmlFor={`rs-${x.id}-${i}`} className="field__label">
@@ -371,7 +382,13 @@ function PendingTab() {
                           <label htmlFor={`re-${x.id}-${i}`} className="field__label">
                             Data ważności
                           </label>
-                          <input id={`re-${x.id}-${i}`} className="input" type="date" value={f.expiresAt ?? ''} onChange={(e) => setPart(x, i, { expiresAt: e.target.value })} />
+                          <input
+                            id={`re-${x.id}-${i}`}
+                            className="input"
+                            type="date"
+                            value={f.expiresAt ?? ''}
+                            onChange={(e) => setPart(x, i, { expiresAt: e.target.value })}
+                          />
                         </div>
                       </div>
                     </div>
@@ -382,7 +399,10 @@ function PendingTab() {
                       <Icon name="plus" size={16} />
                       Podziel na partie
                     </button>
-                    <span className="hint" style={sum < x.qty ? { color: '#8a5a00', fontWeight: 600 } : sum > x.qty ? { color: 'var(--out-bg)', fontWeight: 600 } : undefined}>
+                    <span
+                      className="hint"
+                      style={sum < x.qty ? { color: '#8a5a00', fontWeight: 600 } : sum > x.qty ? { color: 'var(--out-bg)', fontWeight: 600 } : undefined}
+                    >
                       {sum < x.qty
                         ? `Razem ${sum} z ${x.qty} — brakujące ${x.qty - sum} ${p.unit} zostaną jako oczekujące`
                         : sum > x.qty

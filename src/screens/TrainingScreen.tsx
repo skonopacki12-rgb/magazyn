@@ -195,6 +195,11 @@ function LotLine({ lot, unit }: { lot: Lot | undefined; unit: string }) {
   const ex = expiryState(lot);
   return (
     <span className="hint" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'center' }}>
+      {lot.pack && (
+        <span className="pack-tag" style={{ display: 'inline', marginTop: 0 }}>
+          zgrzewka
+        </span>
+      )}
       <span>{openedText(lot)}</span>
       {lot.expiresAt && <span className={`fifo__exp fifo__exp--${ex}`}>{expiryText(lot)}</span>}
       <span>

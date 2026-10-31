@@ -68,6 +68,7 @@ for code, n in [('LOTMIXALE','Ginger Ale'),('LOTMIXGBE','Ginger Beer'),('LOTMIXI
                 ('LOTMIXHIB','Hibiscus Tonic Water'),('LOTMIXLEM','Lemonade'),('LOTMIXROS','Rose Lemonade'),('LOTMIXWAT','Watermelon Lemonade'),
                 ('LOTMIXCOK','Colonial Coke'),('LOTMIXGRA','Pink Grapefruit Lemonade'),('LOTMIXSAK','Sakura Tonic Water')]:
     lot(code, f'Lord of Taste Premium {n} 200 ml', 'napoje', '200 ml')
+    items[-1]['packSize'] = 12  # folder: "OPAKOWANIE ZBIORCZE TACKA - 12 szt."
 for code, n, s in [('LOTSUG','z trzciny cukrowej','700 ml'),('LOTELD','z kwiatu bzu','700 ml'),('LOTAGV','z agawy 100%','700 ml'),
                    ('LOTROS','z kwiatu róży','700 ml'),('LOTWLS','poziomkowy','700 ml'),('LOTQIN','z owoców pigwowca japońskiego','700 ml'),
                    ('LOTRAB','z rabarbaru','700 ml'),('LOTGOS','z agrestu','700 ml'),('LOTSLO','z tarniny','700 ml'),('250LOTMAP','klonowy 100%','250 ml')]:

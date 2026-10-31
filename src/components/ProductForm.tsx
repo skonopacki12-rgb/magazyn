@@ -3,14 +3,15 @@ import type { Category, Unit } from '../lib/types';
 import type { ProductDraft } from '../store';
 import { MIN_LABELS, Stepper } from './Stepper';
 
-export type Draft = Omit<ProductDraft, 'min'> & { min: string };
+export type Draft = Omit<ProductDraft, 'min' | 'packSize'> & { min: string; packSize?: string };
 
 export function emptyDraft(partial?: Partial<Draft>): Draft {
   return { name: '', code: '', cat: 'syropy', unit: 'szt.', min: '2', ...partial };
 }
 
 export function draftToProduct(d: Draft): ProductDraft {
-  return { ...d, name: d.name.trim(), code: d.code.trim().toUpperCase(), min: Math.max(0, Number(d.min) || 0) };
+  const pack = Number(d.packSize) || 0;
+  return { ...d, name: d.name.trim(), code: d.code.trim().toUpperCase(), min: Math.max(0, Number(d.min) || 0), packSize: pack > 1 ? pack : undefined };
 }
 
 interface Props {
@@ -103,6 +104,28 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
     </div>
   );
 
+  const pack = (
+    <div className="field">
+      <label htmlFor={id('pack')} className="field__label">
+        Opakowanie zbiorcze
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          id={id('pack')}
+          className="input input--mono"
+          style={{ width: 88 }}
+          type="text"
+          inputMode="numeric"
+          placeholder="—"
+          value={draft.packSize ?? ''}
+          onChange={(e) => set('packSize', e.target.value.replace(/[^0-9]/g, ''))}
+        />
+        <span className="stepper__unit">{draft.unit} w zgrzewce</span>
+      </div>
+      <p className="hint">Np. 12 dla mixerów w tacce. Puste = bez zgrzewek. W inwentaryzacji rozłożysz butelki na zgrzewki.</p>
+    </div>
+  );
+
   if (layout === 'tablet') {
     return (
       <>
@@ -112,6 +135,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
           {cat}
           {unit}
           {min}
+          {pack}
         </div>
       </>
     );
@@ -125,6 +149,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
         {unit}
       </div>
       {min}
+      {pack}
     </>
   );
 }

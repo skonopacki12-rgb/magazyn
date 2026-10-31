@@ -1,5 +1,6 @@
 import { daysUntil, expiryState, fifoSort, newLot, type ExpiryState } from '../lib/fifo';
 import { digitsOnly, formatDate, plural, todayIso } from '../lib/text';
+import { packSummary, splitIntoCases } from '../lib/pack';
 import type { Lot } from '../lib/types';
 import { Icon } from './Icon';
 
@@ -37,12 +38,13 @@ export function ShelfOptions({ shelves }: { shelves: string[] }) {
 }
 
 /** "2 partie · 1 otwarta · najbliższy termin 3 lis" — or a call to action when empty. */
-export function lotsSummary(lots: Lot[]): string {
-  if (!lots.length) return 'Otwarte i daty ważności';
+export function lotsSummary(lots: Lot[], packSize?: number): string {
+  if (!lots.length) return packSize ? 'Zgrzewki, otwarte i daty ważności' : 'Otwarte i daty ważności';
+  const packs = packSummary(lots, packSize);
   const open = lots.filter((l) => l.open).reduce((s, l) => s + l.qty, 0);
   const next = fifoSort(lots.filter((l) => l.expiresAt)).sort((a, b) => (a.expiresAt! < b.expiresAt! ? -1 : 1))[0];
   return [
-    `${lots.length} ${plural(lots.length, 'partia', 'partie', 'partii')}`,
+    packs ?? `${lots.length} ${plural(lots.length, 'partia', 'partie', 'partii')}`,
     open ? `${open} otw.` : null,
     next ? `termin ${formatDate(next.expiresAt)}` : null,
     shelvesOf(lots),
@@ -52,20 +54,67 @@ export function lotsSummary(lots: Lot[]): string {
 }
 
 /** Small toggle under a product name in inventory that opens the FIFO editor. */
-export function LotToggle({ lots, open, onClick, controls }: { lots: Lot[]; open: boolean; onClick: () => void; controls: string }) {
+export function LotToggle({
+  lots,
+  open,
+  onClick,
+  controls,
+  packSize,
+}: {
+  lots: Lot[];
+  open: boolean;
+  onClick: () => void;
+  controls: string;
+  packSize?: number;
+}) {
   const worst = lots.map((l) => expiryState(l)).find((s) => s === 'expired') ?? lots.map((l) => expiryState(l)).find((s) => s === 'soon');
   return (
     <button type="button" className={`lot-toggle${lots.length ? ' has-lots' : ''}`} aria-expanded={open} aria-controls={controls} onClick={onClick}>
       <Icon name={open ? 'chevronDown' : 'chevronRight'} size={14} strokeWidth={2.4} />
-      <span>{lotsSummary(lots)}</span>
+      <span>{lotsSummary(lots, packSize)}</span>
       {worst && <span className={`lot-dot ${EXPIRY_CLASS[worst]}`} aria-label={worst === 'expired' ? 'po terminie' : 'kończy się termin'} />}
     </button>
   );
 }
 
+/** Case layout: 12 → 3 rows × 4, otherwise a near-square grid (e.g. 6 → 2×3, 24 → 4×6). */
+export function caseColumns(size: number): number {
+  if (size === 12) return 4;
+  let cols = Math.ceil(Math.sqrt(size));
+  while (size % cols && cols < size) cols++;
+  return cols > 8 ? Math.ceil(Math.sqrt(size)) : cols;
+}
+
+/** Graphic bottle count for one case: click the k-th bottle to say k bottles are in the case. */
+export function CaseGrid({ size, qty, onChange, label }: { size: number; qty: number; onChange: (n: number) => void; label: string }) {
+  return (
+    <div className="casegrid" role="group" aria-label={label} style={{ gridTemplateColumns: `repeat(${caseColumns(size)}, 1fr)` }}>
+      {Array.from({ length: size }, (_, i) => {
+        const n = i + 1;
+        const on = n <= qty;
+        return (
+          <button
+            key={n}
+            type="button"
+            className={`casegrid__b${on ? ' is-on' : ''}`}
+            aria-pressed={on}
+            aria-label={on && n === qty ? `${n} butelek — kliknij, aby odjąć jedną` : `${n} ${plural(n, 'butelka', 'butelki', 'butelek')}`}
+            onClick={() => onChange(on && n === qty ? n - 1 : n)}
+          >
+            <svg viewBox="0 0 12 24" aria-hidden="true">
+              <path d="M4.5 1h3v5l2 2.5V22a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5l2-2.5z" />
+            </svg>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * FIFO editor used during inventory: one line per batch (how many, opened or not, dates).
- * The sum of quantities becomes the counted number.
+ * The sum of quantities becomes the counted number. Products sold in cases (packSize) get
+ * "Rozłóż na zgrzewki" and a bottle grid per case.
  */
 export function LotEditor({
   id,
@@ -73,59 +122,106 @@ export function LotEditor({
   unit,
   prevLots,
   onChange,
+  packSize,
+  count = 0,
 }: {
   id: string;
   lots: Lot[];
   unit: string;
   prevLots?: Lot[];
   onChange: (lots: Lot[]) => void;
+  packSize?: number;
+  /** Number typed in the count field — used by "Rozłóż na zgrzewki" when there are no lots yet. */
+  count?: number;
 }) {
   const set = (lotId: string, patch: Partial<Lot>) => onChange(lots.map((l) => (l.id === lotId ? { ...l, ...patch } : l)));
   const total = lots.reduce((s, l) => s + l.qty, 0);
+  let caseNo = 0;
+  const intoCases = () => {
+    const n = lots.length ? total : count;
+    const first = lots[0];
+    const base = { shelf: first?.shelf, expiresAt: first?.expiresAt };
+    if (lots.length && !window.confirm(`Rozłożyć ${n} ${unit} na zgrzewki po ${packSize}? Obecne partie zostaną zastąpione.`)) return;
+    onChange(n > 0 ? splitIntoCases(n, packSize!, base) : [newLot({ ...base, qty: packSize!, pack: true })]);
+  };
   return (
     <div id={id} className="lots" role="group" aria-label="Partie FIFO">
       {lots.map((l, i) => {
         const p = `${id}-${i}`;
         return (
-          <div key={l.id} className={`lot${l.open ? ' is-open' : ''}`}>
-            <div className="lot__row">
-              <div className="lot__qty">
-                <button type="button" className="stepper__btn" aria-label="Mniej" onClick={() => set(l.id, { qty: Math.max(1, l.qty - 1) })}>
-                  <Icon name="minus" size={16} />
-                </button>
-                <label htmlFor={`${p}-q`} className="sr-only">
-                  Ilość w partii {i + 1}
-                </label>
-                <input
-                  id={`${p}-q`}
-                  className="stepper__input"
-                  type="text"
-                  inputMode="numeric"
-                  value={l.qty}
-                  onChange={(e) => set(l.id, { qty: Math.max(0, Number(digitsOnly(e.target.value)) || 0) })}
-                />
-                <button type="button" className="stepper__btn" aria-label="Więcej" onClick={() => set(l.id, { qty: l.qty + 1 })}>
-                  <Icon name="plus" size={16} />
-                </button>
-                <span className="stepper__unit">{unit}</span>
+          <div key={l.id} className={`lot${l.open ? ' is-open' : ''}${l.pack ? ' is-case' : ''}`}>
+            {packSize && (
+              <div className="lot__row">
+                <span className="eyebrow eyebrow--sm" style={{ flex: 1 }}>
+                  {l.pack ? `Zgrzewka ${++caseNo} · ${l.qty}/${packSize}` : `Luzem · ${l.qty} ${unit}`}
+                </span>
+                <div className="seg seg--xs" role="group" aria-label={`Partia ${i + 1}: zgrzewka czy luzem`}>
+                  <button type="button" className="seg__btn" aria-pressed={!!l.pack} onClick={() => set(l.id, { pack: true, qty: Math.min(l.qty, packSize) })}>
+                    Zgrzewka
+                  </button>
+                  <button type="button" className="seg__btn" aria-pressed={!l.pack} onClick={() => set(l.id, { pack: false })}>
+                    Luzem
+                  </button>
+                </div>
               </div>
-              <div className="seg seg--xs" role="group" aria-label={`Partia ${i + 1}: otwarta czy zamknięta`}>
-                <button type="button" className="seg__btn" aria-pressed={!l.open} onClick={() => set(l.id, { open: false, openedAt: undefined })}>
-                  Zamknięta
-                </button>
-                <button type="button" className="seg__btn" aria-pressed={l.open} onClick={() => set(l.id, { open: true, openedAt: l.openedAt ?? todayIso() })}>
-                  Otwarta
+            )}
+            {l.pack && packSize ? (
+              <div className="lot__row">
+                <CaseGrid size={packSize} qty={l.qty} label={`Butelki w zgrzewce ${caseNo}`} onChange={(n) => set(l.id, { qty: n })} />
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--muted lot__del"
+                  aria-label={`Usuń zgrzewkę ${caseNo}`}
+                  onClick={() => onChange(lots.filter((x) => x.id !== l.id))}
+                >
+                  <Icon name="close" size={18} />
                 </button>
               </div>
-              <button
-                type="button"
-                className="icon-btn icon-btn--muted lot__del"
-                aria-label={`Usuń partię ${i + 1}`}
-                onClick={() => onChange(lots.filter((x) => x.id !== l.id))}
-              >
-                <Icon name="close" size={18} />
-              </button>
-            </div>
+            ) : (
+              <div className="lot__row">
+                <div className="lot__qty">
+                  <button type="button" className="stepper__btn" aria-label="Mniej" onClick={() => set(l.id, { qty: Math.max(1, l.qty - 1) })}>
+                    <Icon name="minus" size={16} />
+                  </button>
+                  <label htmlFor={`${p}-q`} className="sr-only">
+                    Ilość w partii {i + 1}
+                  </label>
+                  <input
+                    id={`${p}-q`}
+                    className="stepper__input"
+                    type="text"
+                    inputMode="numeric"
+                    value={l.qty}
+                    onChange={(e) => set(l.id, { qty: Math.max(0, Number(digitsOnly(e.target.value)) || 0) })}
+                  />
+                  <button type="button" className="stepper__btn" aria-label="Więcej" onClick={() => set(l.id, { qty: l.qty + 1 })}>
+                    <Icon name="plus" size={16} />
+                  </button>
+                  <span className="stepper__unit">{unit}</span>
+                </div>
+                <div className="seg seg--xs" role="group" aria-label={`Partia ${i + 1}: otwarta czy zamknięta`}>
+                  <button type="button" className="seg__btn" aria-pressed={!l.open} onClick={() => set(l.id, { open: false, openedAt: undefined })}>
+                    Zamknięta
+                  </button>
+                  <button
+                    type="button"
+                    className="seg__btn"
+                    aria-pressed={l.open}
+                    onClick={() => set(l.id, { open: true, openedAt: l.openedAt ?? todayIso() })}
+                  >
+                    Otwarta
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="icon-btn icon-btn--muted lot__del"
+                  aria-label={`Usuń partię ${i + 1}`}
+                  onClick={() => onChange(lots.filter((x) => x.id !== l.id))}
+                >
+                  <Icon name="close" size={18} />
+                </button>
+              </div>
+            )}
             <div className="lot__dates">
               <label className="lot__date">
                 <span>Półka</span>
@@ -162,13 +258,38 @@ export function LotEditor({
         );
       })}
       <div className="lots__foot">
-        <button type="button" className="btn btn--ghost" onClick={() => onChange([...lots, newLot({ qty: lots.length ? 1 : Math.max(1, total) })])}>
+        {packSize && (
+          <>
+            <button type="button" className={`btn ${lots.length ? 'btn--ghost' : 'btn--primary'}`} onClick={intoCases}>
+              Rozłóż na zgrzewki po {packSize}
+              {(lots.length ? total : count) > 0 ? ` (${lots.length ? total : count} ${unit})` : ''}
+            </button>
+            {lots.length > 0 && (
+              <button
+                type="button"
+                className="btn btn--ghost"
+                onClick={() =>
+                  onChange([...lots, newLot({ qty: packSize, pack: true, shelf: lots[lots.length - 1]?.shelf, expiresAt: lots[lots.length - 1]?.expiresAt })])
+                }
+              >
+                <Icon name="plus" size={16} />
+                Dodaj zgrzewkę
+              </button>
+            )}
+          </>
+        )}
+        <button type="button" className="btn btn--ghost" onClick={() => onChange([...lots, newLot({ qty: lots.length ? 1 : Math.max(1, total || count) })])}>
           <Icon name="plus" size={16} />
-          {lots.length ? 'Dodaj partię' : 'Rozpisz na partie'}
+          {packSize ? (lots.length ? 'Dodaj luzem' : 'Rozpisz bez zgrzewek') : lots.length ? 'Dodaj partię' : 'Rozpisz na partie'}
         </button>
         {!lots.length && prevLots && prevLots.length > 0 && (
           <button type="button" className="btn btn--quiet" onClick={() => onChange(prevLots.map((l) => ({ ...l, id: newLot().id })))}>
             Wczytaj z poprzedniej ({prevLots.length})
+          </button>
+        )}
+        {lots.length > 1 && (lots[0].shelf || lots[0].expiresAt) && lots.some((l) => l.shelf !== lots[0].shelf || l.expiresAt !== lots[0].expiresAt) && (
+          <button type="button" className="btn btn--quiet" onClick={() => onChange(lots.map((l) => ({ ...l, shelf: lots[0].shelf, expiresAt: lots[0].expiresAt })))}>
+            Półka i data jak w 1. dla wszystkich
           </button>
         )}
         {lots.length > 0 && (
@@ -199,6 +320,7 @@ export function LotsList({ lots, unit, compact, headingLevel = 'h2' }: { lots: L
               <li key={l.id} className="fifo__item">
                 <span className="fifo__n mono">
                   {l.qty} {unit}
+                  {l.pack && <span className="pack-tag">zgrzewka</span>}
                 </span>
                 <span className={`shelf-tag${l.shelf ? '' : ' is-none'}`} title="Półka">
                   {l.shelf ?? 'bez półki'}

@@ -2633,3 +2633,57 @@ button.rack__slot:hover {
 .sizer__sq img {
   mix-blend-mode: multiply;
 }
+
+/* ───────── Cases (zgrzewki) ───────── */
+.lot.is-case {
+  border-color: var(--accent);
+}
+.casegrid {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  max-width: 340px;
+}
+.casegrid__b {
+  height: 52px;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--field);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.casegrid__b svg {
+  height: 100%;
+  fill: none;
+  stroke: var(--field);
+  stroke-width: 1.2;
+}
+.casegrid__b.is-on {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.casegrid__b.is-on svg {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.pack-tag {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.casegrid {
+  flex: 0 1 auto;
+  max-width: none;
+}
+.casegrid__b {
+  width: 44px;
+  height: 56px;
+}

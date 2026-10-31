@@ -1,3 +1,4 @@
+import { packSizeOf } from '../../lib/pack';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
@@ -85,12 +86,26 @@ export function PhoneInventory() {
                     <span className="code">
                       {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                     </span>
-                    <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`lots-${p.id}`} />
+                    <LotToggle
+                      lots={p.countLots}
+                      packSize={packSizeOf(p)}
+                      open={m.isExpanded(p)}
+                      onClick={() => m.toggleExpanded(p)}
+                      controls={`lots-${p.id}`}
+                    />
                   </span>
                   {!p.uncounted && <SameButton p={p} onClick={() => m.same(p)} />}
                   <CountInput id={`inw-${p.id}`} p={p} onChange={(v) => m.set(p, v)} />
                   {m.isExpanded(p) && (
-                    <LotEditor id={`lots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                    <LotEditor
+                      id={`lots-${p.id}`}
+                      lots={p.countLots}
+                      prevLots={p.prevLots}
+                      unit={p.unit}
+                      packSize={packSizeOf(p)}
+                      count={Number(p.val) || 0}
+                      onChange={(l) => m.setLots(p, l)}
+                    />
                   )}
                 </li>
               ))}

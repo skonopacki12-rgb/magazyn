@@ -1,3 +1,4 @@
+import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
 import { CountInput, groupByCategory, Progress, SameButton, Segmented, useInventory } from '../../components/Inventory';
@@ -58,7 +59,13 @@ export function TabletInventory() {
                       <span className="code">
                         {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                       </span>
-                      <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`tlots-${p.id}`} />
+                      <LotToggle
+                        lots={p.countLots}
+                        packSize={packSizeOf(p)}
+                        open={m.isExpanded(p)}
+                        onClick={() => m.toggleExpanded(p)}
+                        controls={`tlots-${p.id}`}
+                      />
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -85,7 +92,15 @@ export function TabletInventory() {
                     {!p.uncounted && <SameButton p={p} variant="tablet" onClick={() => m.same(p)} />}
                   </div>
                   {m.isExpanded(p) && (
-                    <LotEditor id={`tlots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                    <LotEditor
+                      id={`tlots-${p.id}`}
+                      lots={p.countLots}
+                      prevLots={p.prevLots}
+                      unit={p.unit}
+                      packSize={packSizeOf(p)}
+                      count={Number(p.val) || 0}
+                      onChange={(l) => m.setLots(p, l)}
+                    />
                   )}
                 </li>
               ))}
@@ -203,7 +218,13 @@ export function LaptopInventory() {
                               <label htmlFor={`linw-${p.id}`} className="t-name">
                                 {p.name}
                               </label>
-                              <LotToggle lots={p.countLots} open={m.isExpanded(p)} onClick={() => m.toggleExpanded(p)} controls={`llots-${p.id}`} />
+                              <LotToggle
+                                lots={p.countLots}
+                                packSize={packSizeOf(p)}
+                                open={m.isExpanded(p)}
+                                onClick={() => m.toggleExpanded(p)}
+                                controls={`llots-${p.id}`}
+                              />
                             </span>
                           </span>
                           <span className="code">{p.code}</span>
@@ -220,7 +241,15 @@ export function LaptopInventory() {
                         </div>
                         {m.isExpanded(p) && (
                           <div style={{ padding: '0 16px 12px' }}>
-                            <LotEditor id={`llots-${p.id}`} lots={p.countLots} prevLots={p.prevLots} unit={p.unit} onChange={(l) => m.setLots(p, l)} />
+                            <LotEditor
+                              id={`llots-${p.id}`}
+                              lots={p.countLots}
+                              prevLots={p.prevLots}
+                              unit={p.unit}
+                              packSize={packSizeOf(p)}
+                              count={Number(p.val) || 0}
+                              onChange={(l) => m.setLots(p, l)}
+                            />
                           </div>
                         )}
                       </li>

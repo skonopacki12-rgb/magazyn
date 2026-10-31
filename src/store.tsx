@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
+import { packSizeOf, splitIntoCases } from './lib/pack';
 import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
 import { formatDate, todayIso } from './lib/text';
 import { newLot } from './lib/fifo';
@@ -37,7 +38,7 @@ export interface Receipt {
 
 const LOG_LIMIT = 300;
 
-export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'>;
+export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & { packSize?: number };
 
 type Action =
   | { type: 'add'; id: string; draft: ProductDraft }
@@ -126,9 +127,16 @@ function reducer(state: State, action: Action): State {
         name = p.name;
         unit = p.unit;
         const lots = [...(p.lots ?? [])];
+        const size = packSizeOf(p);
         for (const r of parts) {
-          const lot: Lot = { id: newLot().id, qty: r.qty, open: false, shelf: r.shelf?.trim() || undefined, expiresAt: r.expiresAt || undefined };
-          const same = lots.findIndex((l) => !l.open && (l.shelf ?? '') === (lot.shelf ?? '') && (l.expiresAt ?? '') === (lot.expiresAt ?? ''));
+          const base = { open: false, shelf: r.shelf?.trim() || undefined, expiresAt: r.expiresAt || undefined };
+          if (size) {
+            // Products delivered in cases (e.g. mixers in trays of 12) are stored case by case.
+            lots.push(...splitIntoCases(r.qty, size, base));
+            continue;
+          }
+          const lot: Lot = { id: newLot().id, qty: r.qty, ...base };
+          const same = lots.findIndex((l) => !l.open && !l.pack && (l.shelf ?? '') === (lot.shelf ?? '') && (l.expiresAt ?? '') === (lot.expiresAt ?? ''));
           if (same >= 0) lots[same] = { ...lots[same], qty: lots[same].qty + r.qty };
           else lots.push(lot);
         }
@@ -349,6 +357,7 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
             size: it.size,
             image: it.image ?? undefined,
             catalogId: it.id,
+            packSize: it.packSize,
           });
         }
         if (fresh.length) dispatch({ type: 'addMany', products: fresh });

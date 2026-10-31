@@ -1,3 +1,4 @@
+import { packSizeOf } from '../../lib/pack';
 import { useEffect, useState } from 'react';
 import { IncomingNote } from '../../components/Incoming';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -20,7 +21,14 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
   const stored = isNew ? undefined : byId(id);
   const [draft, setDraft] = useState<Draft>(() =>
     stored
-      ? { name: stored.name, code: stored.code, cat: stored.cat, unit: stored.unit, min: String(stored.min) }
+      ? {
+          name: stored.name,
+          code: stored.code,
+          cat: stored.cat,
+          unit: stored.unit,
+          min: String(stored.min),
+          packSize: packSizeOf(stored) ? String(packSizeOf(stored)) : '',
+        }
       : emptyDraft({ name: params.get('nazwa') ?? '' }),
   );
   const [saved, setSaved] = useState(false);
