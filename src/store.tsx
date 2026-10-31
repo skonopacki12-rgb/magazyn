@@ -3,6 +3,7 @@ import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
 import { packSizeOf, splitIntoCases } from './lib/pack';
+import { parseSize } from './lib/volume';
 import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
 import { formatDate, todayIso } from './lib/text';
 import { newLot } from './lib/fifo';
@@ -38,7 +39,7 @@ export interface Receipt {
 
 const LOG_LIMIT = 300;
 
-export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & { packSize?: number };
+export type ProductDraft = Pick<Product, 'name' | 'code' | 'cat' | 'unit' | 'min'> & { packSize?: number; volume?: number; volumeUnit?: 'ml' | 'g' };
 
 type Action =
   | { type: 'add'; id: string; draft: ProductDraft }
@@ -358,6 +359,8 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
             image: it.image ?? undefined,
             catalogId: it.id,
             packSize: it.packSize,
+            volume: parseSize(it.size)?.value,
+            volumeUnit: parseSize(it.size)?.unit,
           });
         }
         if (fresh.length) dispatch({ type: 'addMany', products: fresh });

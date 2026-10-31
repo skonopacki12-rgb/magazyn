@@ -1,3 +1,4 @@
+import { volumeOf } from '../../lib/volume';
 import { packSizeOf } from '../../lib/pack';
 import { useEffect, useState } from 'react';
 import { IncomingNote } from '../../components/Incoming';
@@ -28,6 +29,8 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
           unit: stored.unit,
           min: String(stored.min),
           packSize: packSizeOf(stored) ? String(packSizeOf(stored)) : '',
+          volume: volumeOf(stored) ? String(volumeOf(stored)!.value) : '',
+          volumeUnit: volumeOf(stored)?.unit,
         }
       : emptyDraft({ name: params.get('nazwa') ?? '' }),
   );

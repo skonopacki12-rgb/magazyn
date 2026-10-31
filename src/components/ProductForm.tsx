@@ -3,7 +3,7 @@ import type { Category, Unit } from '../lib/types';
 import type { ProductDraft } from '../store';
 import { MIN_LABELS, Stepper } from './Stepper';
 
-export type Draft = Omit<ProductDraft, 'min' | 'packSize'> & { min: string; packSize?: string };
+export type Draft = Omit<ProductDraft, 'min' | 'packSize' | 'volume'> & { min: string; packSize?: string; volume?: string };
 
 export function emptyDraft(partial?: Partial<Draft>): Draft {
   return { name: '', code: '', cat: 'syropy', unit: 'szt.', min: '2', ...partial };
@@ -11,7 +11,16 @@ export function emptyDraft(partial?: Partial<Draft>): Draft {
 
 export function draftToProduct(d: Draft): ProductDraft {
   const pack = Number(d.packSize) || 0;
-  return { ...d, name: d.name.trim(), code: d.code.trim().toUpperCase(), min: Math.max(0, Number(d.min) || 0), packSize: pack > 1 ? pack : undefined };
+  const vol = Number(d.volume) || 0;
+  return {
+    ...d,
+    name: d.name.trim(),
+    code: d.code.trim().toUpperCase(),
+    min: Math.max(0, Number(d.min) || 0),
+    packSize: pack > 1 ? pack : undefined,
+    volume: vol > 0 ? vol : undefined,
+    volumeUnit: vol > 0 ? (d.volumeUnit ?? 'ml') : undefined,
+  };
 }
 
 interface Props {
@@ -104,6 +113,37 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
     </div>
   );
 
+  const volume = (
+    <div className="field">
+      <label htmlFor={id('vol')} className="field__label">
+        Objętość butelki / opakowania
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input
+          id={id('vol')}
+          className="input input--mono"
+          style={{ width: 104 }}
+          type="text"
+          inputMode="numeric"
+          placeholder="np. 700"
+          value={draft.volume ?? ''}
+          onChange={(e) => set('volume', e.target.value.replace(/[^0-9]/g, ''))}
+        />
+        <select
+          aria-label="Jednostka objętości"
+          className="select"
+          style={{ width: 80 }}
+          value={draft.volumeUnit ?? 'ml'}
+          onChange={(e) => set('volumeUnit', e.target.value as 'ml' | 'g')}
+        >
+          <option value="ml">ml</option>
+          <option value="g">g</option>
+        </select>
+      </div>
+      <p className="hint">Ile ma pełna, zamknięta butelka. Przy liczeniu w ml „+ Pełna butelka” doda tyle ml.</p>
+    </div>
+  );
+
   const pack = (
     <div className="field">
       <label htmlFor={id('pack')} className="field__label">
@@ -135,6 +175,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
           {cat}
           {unit}
           {min}
+          {volume}
           {pack}
         </div>
       </>
@@ -149,6 +190,7 @@ export function ProductFields({ idPrefix, draft, onChange, layout, placeholders 
         {unit}
       </div>
       {min}
+      {volume}
       {pack}
     </>
   );

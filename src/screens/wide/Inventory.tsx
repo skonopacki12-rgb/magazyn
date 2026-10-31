@@ -1,7 +1,7 @@
 import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
 import { Icon } from '../../components/Icon';
-import { CountInput, groupByCategory, Progress, SameButton, Segmented, useInventory } from '../../components/Inventory';
+import { QuickAdd, CountInput, groupByCategory, Progress, SameButton, Segmented, useInventory } from '../../components/Inventory';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
@@ -59,6 +59,7 @@ export function TabletInventory() {
                       <span className="code">
                         {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                       </span>
+                      <QuickAdd m={m} p={p} />
                       <LotToggle
                         lots={p.countLots}
                         packSize={packSizeOf(p)}
@@ -218,6 +219,7 @@ export function LaptopInventory() {
                               <label htmlFor={`linw-${p.id}`} className="t-name">
                                 {p.name}
                               </label>
+                              <QuickAdd m={m} p={p} />
                               <LotToggle
                                 lots={p.countLots}
                                 packSize={packSizeOf(p)}

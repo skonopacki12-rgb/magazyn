@@ -1,3 +1,4 @@
+import { volumeOf } from '../../lib/volume';
 import { packSizeOf } from '../../lib/pack';
 import { useState } from 'react';
 import type { CatFilter } from '../../components/CategoryChips';
@@ -76,7 +77,7 @@ export function useStockPanel(defaultPanel: 'order' | 'product', init: StockPane
       if (!sel) return;
       setEditId(sel.id);
       setErr(false);
-      setDraftRaw({ name: sel.name, code: sel.code, cat: sel.cat, unit: sel.unit, min: String(sel.min), packSize: packSizeOf(sel) ? String(packSizeOf(sel)) : '' });
+      setDraftRaw({ name: sel.name, code: sel.code, cat: sel.cat, unit: sel.unit, min: String(sel.min), packSize: packSizeOf(sel) ? String(packSizeOf(sel)) : '', volume: volumeOf(sel) ? String(volumeOf(sel)!.value) : '', volumeUnit: volumeOf(sel)?.unit });
       setPanel('form');
     },
     cancel: () => {

@@ -288,7 +288,11 @@ export function LotEditor({
           </button>
         )}
         {lots.length > 1 && (lots[0].shelf || lots[0].expiresAt) && lots.some((l) => l.shelf !== lots[0].shelf || l.expiresAt !== lots[0].expiresAt) && (
-          <button type="button" className="btn btn--quiet" onClick={() => onChange(lots.map((l) => ({ ...l, shelf: lots[0].shelf, expiresAt: lots[0].expiresAt })))}>
+          <button
+            type="button"
+            className="btn btn--quiet"
+            onClick={() => onChange(lots.map((l) => ({ ...l, shelf: lots[0].shelf, expiresAt: lots[0].expiresAt })))}
+          >
             Półka i data jak w 1. dla wszystkich
           </button>
         )}

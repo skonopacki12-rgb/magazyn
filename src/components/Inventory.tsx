@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import { CATEGORIES } from '../lib/catalog';
 import { digitsOnly, formatDate, todayIso } from '../lib/text';
-import { cloneLots } from '../lib/fifo';
+import { cloneLots, newLot } from '../lib/fifo';
+import { packSizeOf } from '../lib/pack';
+import { bottleQty, formatVolume, volumeOf } from '../lib/volume';
+import { Icon } from './Icon';
 import type { Lot, StockedProduct } from '../lib/types';
 import { useStore } from '../store';
 
@@ -84,6 +87,26 @@ export function useInventory() {
     setLots: (p: InvItem, lots: Lot[]) => {
       if (snapshot) setSnapshot(null);
       setLots(p.id, lots);
+    },
+    /** "+ Pełna butelka": adds one closed full bottle (1 szt. or its content in ml) as a FIFO lot. */
+    addBottle: (p: InvItem) => {
+      if (snapshot) setSnapshot(null);
+      const lots = p.countLots.length ? [...p.countLots] : p.counted && Number(p.val) > 0 ? [newLot({ qty: Number(p.val) })] : [];
+      const tpl = lots[lots.length - 1] ?? p.prevLots[p.prevLots.length - 1];
+      const add = bottleQty(p);
+      const i = lots.findIndex((l) => !l.open && !l.pack && l.shelf === tpl?.shelf && l.expiresAt === (lots.length ? tpl?.expiresAt : undefined));
+      if (i >= 0) lots[i] = { ...lots[i], qty: lots[i].qty + add };
+      else lots.push(newLot({ qty: add, open: false, shelf: tpl?.shelf, expiresAt: lots.length ? tpl?.expiresAt : undefined }));
+      setLots(p.id, lots);
+    },
+    /** "+ Zgrzewka": adds a full case (e.g. 12 mixers) as one lot. */
+    addCase: (p: InvItem) => {
+      const size = packSizeOf(p);
+      if (!size) return;
+      if (snapshot) setSnapshot(null);
+      const lots = p.countLots.length ? [...p.countLots] : p.counted && Number(p.val) > 0 ? [newLot({ qty: Number(p.val) })] : [];
+      const tpl = lots[lots.length - 1] ?? p.prevLots[p.prevLots.length - 1];
+      setLots(p.id, [...lots, newLot({ qty: size, pack: true, open: false, shelf: tpl?.shelf, expiresAt: lots.length ? tpl?.expiresAt : undefined })]);
     },
     isExpanded: (p: InvItem) => expanded.has(p.id),
     toggleExpanded: (p: InvItem) =>
@@ -183,5 +206,26 @@ export function Segmented({ m, small }: { m: InventoryModel; small?: boolean }) 
         Niepoliczone ({m.left})
       </button>
     </div>
+  );
+}
+
+/** Quick-add buttons under a product in inventory: a closed full bottle, or a full case for products in cases. */
+export function QuickAdd({ m, p }: { m: InventoryModel; p: InvItem }) {
+  const size = packSizeOf(p);
+  const vol = volumeOf(p);
+  const add = bottleQty(p);
+  return (
+    <span className="quick">
+      <button type="button" className="quick__btn" onClick={() => m.addBottle(p)} aria-label={`Dodaj zamkniętą pełną butelkę: ${p.name}`}>
+        <Icon name="plus" size={14} strokeWidth={2.6} />
+        Pełna butelka{p.unit === 'ml' && add > 1 ? ` ${add} ml` : vol ? ` · ${formatVolume(vol)}` : ''}
+      </button>
+      {size && (
+        <button type="button" className="quick__btn quick__btn--case" onClick={() => m.addCase(p)} aria-label={`Dodaj pełną zgrzewkę ${size} szt.: ${p.name}`}>
+          <Icon name="plus" size={14} strokeWidth={2.6} />
+          Zgrzewka ({size} szt.)
+        </button>
+      )}
+    </span>
   );
 }

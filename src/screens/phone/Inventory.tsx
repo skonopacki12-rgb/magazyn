@@ -1,7 +1,7 @@
 import { packSizeOf } from '../../lib/pack';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../components/Icon';
-import { CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
+import { QuickAdd, CountInput, groupByCategory, Progress, SameButton, useInventory, type InventoryModel } from '../../components/Inventory';
 import { TabBar } from '../../components/Shell';
 import { Thumb } from '../../components/Thumb';
 import { LotEditor, LotToggle } from '../../components/Lots';
@@ -86,6 +86,7 @@ export function PhoneInventory() {
                     <span className="code">
                       {p.code} · {p.uncounted ? 'nowy' : `poprz. ${p.prev}`}
                     </span>
+                    <QuickAdd m={m} p={p} />
                     <LotToggle
                       lots={p.countLots}
                       packSize={packSizeOf(p)}

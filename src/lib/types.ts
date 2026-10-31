@@ -47,6 +47,9 @@ export interface Product {
   lots?: Lot[];
   /** Units per case (zgrzewka / tacka), e.g. 12 for Lord of Taste mixers. */
   packSize?: number;
+  /** Content of one full bottle / pack, e.g. 700 (ml) or 1000 (g). */
+  volume?: number;
+  volumeUnit?: 'ml' | 'g';
 }
 
 /** One row of a shelf; each slot holds one product (bottle) or is empty. */

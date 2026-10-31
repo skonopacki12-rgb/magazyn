@@ -100,6 +100,16 @@ Po zakończeniu inwentaryzacji:
   Towar dochodzi do stanu jako nowa partia (zamknięta). Jeśli dotarło mniej, brakująca część zostaje
   jako oczekująca. Pozycję można też anulować. Dostawy trafiają do dziennika ruchów.
 
+## Objętość i szybkie dodawanie w inwentaryzacji
+
+Produkt ma **objętość butelki/opakowania** (pole w formularzu, ml lub g). Produkty z folderów mają ją
+z rozmiaru („1 l” → 1000 ml), a pozostałe — z końca nazwy („… 0,7 l” → 700 ml), dopóki nie wpiszesz jej ręcznie.
+
+W inwentaryzacji przy każdym produkcie są przyciski:
+- **+ Pełna butelka** — dodaje jedną zamkniętą, pełną butelkę jako partię FIFO (+1 szt.; przy liczeniu w ml
+  dodaje pojemność, np. +700 ml). Kolejne kliknięcia zwiększają tę samą partię.
+- **+ Zgrzewka (12 szt.)** — przy produktach w zgrzewkach (mixery Lord of Taste) dodaje pełną zgrzewkę.
+
 ## Zgrzewki
 
 Produkt może mieć **opakowanie zbiorcze** (pole w formularzu produktu, np. 12). Mixery Lord of Taste
