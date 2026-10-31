@@ -47,23 +47,27 @@ export function TopBar({ variant, children }: { variant: 'tablet' | 'laptop'; ch
     <header className={`topbar topbar--${variant}`}>
       <span className="topbar__brand">Magazyn</span>
       <nav aria-label="Menu główne" className="topbar__nav">
-        <Link to="/" className="topbar__link" aria-current={onInventory || pathname.startsWith('/zamowienia') ? undefined : 'page'}>
+        <Link to="/" className="topbar__link" aria-current={onInventory || /^\/(zamowienia|polki|szkolenie)/.test(pathname) ? undefined : 'page'}>
           <Icon name="search" size={iconSize} />
-          Stany
+          <span className="label-wide">Stany</span>
         </Link>
         <Link to="/inwentaryzacja" className="topbar__link" aria-current={onInventory ? 'page' : undefined}>
           <Icon name="clipboard" size={iconSize} />
-          Inwentaryzacja
+          <span className="label-wide">Inwentaryzacja</span>
         </Link>
         <Link to="/zamowienia" className="topbar__link" aria-current={pathname.startsWith('/zamowienia') ? 'page' : undefined}>
           <Icon name="cart" size={iconSize} />
-          Zamówienia
+          <span className="label-wide">Zamówienia</span>
           {pendingCount > 0 && <span className="live-pill">{pendingCount} w drodze</span>}
         </Link>
-        <Link to="/szkolenie" className="topbar__link">
+        <Link to="/szkolenie" className="topbar__link" aria-current={pathname.startsWith('/szkolenie') ? 'page' : undefined}>
           <Icon name="glass" size={iconSize} />
-          Szkolenie
+          <span className="label-wide">Szkolenie</span>
           {training && <span className="live-pill">w trakcie</span>}
+        </Link>
+        <Link to="/polki" className="topbar__link" aria-current={pathname.startsWith('/polki') ? 'page' : undefined}>
+          <Icon name="shelf" size={iconSize} />
+          <span className="label-wide">Półki</span>
         </Link>
       </nav>
       {children ?? <span className="spacer" />}

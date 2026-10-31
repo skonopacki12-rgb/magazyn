@@ -244,10 +244,11 @@ function lastShelf(p: StockedProduct | undefined): string {
 
 function PendingTab() {
   const { pending, byId, receive, cancelPending } = useStore();
-  const [forms, setForms] = useState<Record<string, Receipt>>({});
+  const [forms, setForms] = useState<Record<string, Receipt[]>>({});
   const [received, setReceived] = useState<string[]>([]);
-  const formFor = (x: Pending): Receipt => forms[x.id] ?? { qty: x.qty, shelf: lastShelf(byId(x.productId)), expiresAt: '' };
-  const setForm = (x: Pending, patch: Partial<Receipt>) => setForms((f) => ({ ...f, [x.id]: { ...formFor(x), ...patch } }));
+  const partsFor = (x: Pending): Receipt[] => forms[x.id] ?? [{ qty: x.qty, shelf: lastShelf(byId(x.productId)), expiresAt: '' }];
+  const setParts = (x: Pending, parts: Receipt[]) => setForms((f) => ({ ...f, [x.id]: parts }));
+  const setPart = (x: Pending, i: number, patch: Partial<Receipt>) => setParts(x, partsFor(x).map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   const byDay = new Map<string, Pending[]>();
   for (const x of [...pending].sort((a, b) => (a.orderedAt < b.orderedAt ? 1 : -1))) {
@@ -257,9 +258,28 @@ function PendingTab() {
 
   const take = (x: Pending) => {
     const p = byId(x.productId);
-    const f = formFor(x);
-    receive(x.id, f);
-    setReceived((r) => [`${p?.name ?? x.productId}: +${f.qty} ${p?.unit ?? ''}${f.shelf ? ` → półka ${f.shelf}` : ''}`, ...r].slice(0, 6));
+    const parts = partsFor(x).filter((r) => r.qty > 0);
+    receive(x.id, parts);
+    setForms((f) => {
+      const { [x.id]: _done, ...rest } = f;
+      return rest;
+    });
+    const lines = parts.map(
+      (r) =>
+        `${p?.name ?? x.productId}: +${r.qty} ${p?.unit ?? ''}${r.shelf ? ` → półka ${r.shelf}` : ''}${r.expiresAt ? ` · do ${formatDate(r.expiresAt)}` : ''}`,
+    );
+    setReceived((prev) => [...lines, ...prev].slice(0, 8));
+  };
+
+  /** "Podziel na partie": take one unit (or what's left) off the last part into a new part. */
+  const split = (x: Pending) => {
+    const parts = partsFor(x);
+    const sum = parts.reduce((s, r) => s + r.qty, 0);
+    const last = parts[parts.length - 1];
+    if (sum < x.qty) return setParts(x, [...parts, { qty: x.qty - sum, shelf: last.shelf, expiresAt: '' }]);
+    if (last.qty <= 1) return setParts(x, [...parts, { qty: 0, shelf: last.shelf, expiresAt: '' }]);
+    const moveQty = Math.floor(last.qty / 2);
+    setParts(x, [...parts.slice(0, -1), { ...last, qty: last.qty - moveQty }, { qty: moveQty, shelf: last.shelf, expiresAt: '' }]);
   };
 
   return (
@@ -291,8 +311,9 @@ function PendingTab() {
             {items.map((x) => {
               const p = byId(x.productId);
               if (!p) return null;
-              const f = formFor(x);
-              const short = f.qty < x.qty;
+              const parts = partsFor(x);
+              const sum = parts.reduce((s, r) => s + r.qty, 0);
+              const many = parts.length > 1;
               return (
                 <li key={x.id} className="card card--16 ret">
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -305,45 +326,73 @@ function PendingTab() {
                     </span>
                     <span className="badge is-new">Oczekuje</span>
                   </div>
-                  <div className="ret__grid">
-                    <div className="field" style={{ gap: 4 }}>
-                      <label htmlFor={`rq-${x.id}`} className="field__label">
-                        Dostarczono
-                      </label>
-                      <Stepper id={`rq-${x.id}`} value={f.qty} small unit={p.unit} label={QTY_LABELS} onChange={(v) => setForm(x, { qty: Number(v) || 0 })} />
-                      {short && (
-                        <span className="hint" style={{ color: '#8a5a00', fontWeight: 600 }}>
-                          Brakujące {x.qty - f.qty} {p.unit} zostaną jako oczekujące.
-                        </span>
+
+                  {parts.map((f, i) => (
+                    <div key={i} className={many ? 'part' : undefined}>
+                      {many && (
+                        <div className="heading-row" style={{ alignItems: 'center' }}>
+                          <span className="eyebrow eyebrow--sm">Partia {i + 1}</span>
+                          <button
+                            type="button"
+                            className="icon-btn icon-btn--muted"
+                            aria-label={`Usuń partię ${i + 1}`}
+                            onClick={() => {
+                              const rest = parts.filter((_, j) => j !== i);
+                              rest[Math.max(0, i - 1)] = { ...rest[Math.max(0, i - 1)], qty: rest[Math.max(0, i - 1)].qty + f.qty };
+                              setParts(x, rest);
+                            }}
+                          >
+                            <Icon name="close" size={16} />
+                          </button>
+                        </div>
                       )}
+                      <div className="ret__grid">
+                        <div className="field" style={{ gap: 4 }}>
+                          <label htmlFor={`rq-${x.id}-${i}`} className="field__label">
+                            {many ? 'Ilość' : 'Dostarczono'}
+                          </label>
+                          <Stepper id={`rq-${x.id}-${i}`} value={f.qty} small unit={p.unit} label={QTY_LABELS} onChange={(v) => setPart(x, i, { qty: Number(v) || 0 })} />
+                        </div>
+                        <div className="field" style={{ gap: 4 }}>
+                          <label htmlFor={`rs-${x.id}-${i}`} className="field__label">
+                            Półka
+                          </label>
+                          <input
+                            id={`rs-${x.id}-${i}`}
+                            className="input input--mono"
+                            list="shelf-options"
+                            autoComplete="off"
+                            placeholder="np. A2"
+                            value={f.shelf ?? ''}
+                            onChange={(e) => setPart(x, i, { shelf: e.target.value })}
+                          />
+                        </div>
+                        <div className="field" style={{ gap: 4 }}>
+                          <label htmlFor={`re-${x.id}-${i}`} className="field__label">
+                            Data ważności
+                          </label>
+                          <input id={`re-${x.id}-${i}`} className="input" type="date" value={f.expiresAt ?? ''} onChange={(e) => setPart(x, i, { expiresAt: e.target.value })} />
+                        </div>
+                      </div>
                     </div>
-                    <div className="field" style={{ gap: 4 }}>
-                      <label htmlFor={`rs-${x.id}`} className="field__label">
-                        Półka
-                      </label>
-                      <input
-                        id={`rs-${x.id}`}
-                        className="input input--mono"
-                        list="shelf-options"
-                        autoComplete="off"
-                        placeholder="np. A2"
-                        value={f.shelf ?? ''}
-                        onChange={(e) => setForm(x, { shelf: e.target.value })}
-                      />
-                    </div>
-                    <div className="field" style={{ gap: 4 }}>
-                      <label htmlFor={`re-${x.id}`} className="field__label">
-                        Data ważności
-                      </label>
-                      <input
-                        id={`re-${x.id}`}
-                        className="input"
-                        type="date"
-                        value={f.expiresAt ?? ''}
-                        onChange={(e) => setForm(x, { expiresAt: e.target.value })}
-                      />
-                    </div>
+                  ))}
+
+                  <div className="heading-row" style={{ alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <button type="button" className="btn btn--ghost" onClick={() => split(x)}>
+                      <Icon name="plus" size={16} />
+                      Podziel na partie
+                    </button>
+                    <span className="hint" style={sum < x.qty ? { color: '#8a5a00', fontWeight: 600 } : sum > x.qty ? { color: 'var(--out-bg)', fontWeight: 600 } : undefined}>
+                      {sum < x.qty
+                        ? `Razem ${sum} z ${x.qty} — brakujące ${x.qty - sum} ${p.unit} zostaną jako oczekujące`
+                        : sum > x.qty
+                          ? `Razem ${sum} — więcej niż zamówiono (${x.qty})`
+                          : many
+                            ? `Razem ${sum} z ${x.qty}`
+                            : 'Różne daty lub półki? Podziel na partie.'}
+                    </span>
                   </div>
+
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
                     <button
                       type="button"
@@ -352,9 +401,10 @@ function PendingTab() {
                     >
                       Anuluj zamówienie
                     </button>
-                    <button type="button" className="btn btn--primary btn--md" disabled={f.qty <= 0} onClick={() => take(x)}>
+                    <button type="button" className="btn btn--primary btn--md" disabled={sum <= 0} onClick={() => take(x)}>
                       <Icon name="check" size={18} />
-                      Przyjmij {f.qty} {p.unit}
+                      Przyjmij {sum} {p.unit}
+                      {many ? ` (${parts.filter((r) => r.qty > 0).length} partie)` : ''}
                     </button>
                   </div>
                 </li>

@@ -45,6 +45,21 @@ export interface Product {
   lots?: Lot[];
 }
 
+/** One row of a shelf; each slot holds one product (bottle) or is empty. */
+export interface ShelfRow {
+  id: string;
+  /** Product id per slot, null = empty slot. Length = number of slots in the row. */
+  slots: (string | null)[];
+}
+
+/** Physical shelf layout (planogram). `name` matches the "Półka" label used in lots. */
+export interface ShelfDef {
+  id: string;
+  name: string;
+  /** Top row first. */
+  rows: ShelfRow[];
+}
+
 /** An ordered product that hasn't arrived yet. */
 export interface Pending {
   id: string;

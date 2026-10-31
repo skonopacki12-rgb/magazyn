@@ -100,6 +100,20 @@ Po zakończeniu inwentaryzacji:
   Towar dochodzi do stanu jako nowa partia (zamknięta). Jeśli dotarło mniej, brakująca część zostaje
   jako oczekująca. Pozycję można też anulować. Dostawy trafiają do dziennika ruchów.
 
+## Układ półek (planogram)
+
+**Półki** (`/polki`, link w górnym pasku, ikona na telefonie i w menu konta):
+- Półka (nazwa jak w polu „Półka” w partiach, np. `A2`) ma **rzędy**, a rząd ma **miejsca** — w każdym
+  miejscu stoi jedna butelka. Liczbę miejsc ustawiasz graficznie: klik w k-ty kwadrat = k miejsc
+  (klik w ostatni zaznaczony usuwa jedno). Rzędy można dodawać, usuwać i przesuwać.
+- **Produkty** — klikasz miejsce i wybierasz produkt (opcja: wypełnij wszystkie puste miejsca w rzędzie).
+  Produkty, które według partii leżą na tej półce, są podpowiadane jako pierwsze.
+- **Podgląd** — półka „jak w rzeczywistości”: deski i zdjęcia butelek w miejscach; opcjonalnie stany na
+  tej półce (wg partii), otwarte butelki i terminy oraz podpisy.
+
+Przy przyjęciu dostawy **„Podziel na partie”** pozwala rozpisać jedną pozycję na kilka partii —
+każda z własną ilością, półką i datą ważności.
+
 ## Półki i szkolenie
 
 Każda partia ma pole **Półka** (np. A2) — wpisujesz je w inwentaryzacji; aplikacja podpowiada półki już używane.

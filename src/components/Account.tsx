@@ -49,6 +49,9 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
           <span className="sync-dot" role="status">
             {syncText}
           </span>
+          <Link to="/polki" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
+            Półki — układ i podgląd
+          </Link>
           <Link to="/terminy" className="btn btn--ghost btn--block" onClick={() => setOpen(false)}>
             Terminy i otwarte butelki
           </Link>

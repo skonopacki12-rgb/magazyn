@@ -5,7 +5,7 @@ import { withStatus } from './lib/stock';
 import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
 import { formatDate, todayIso } from './lib/text';
 import { newLot } from './lib/fifo';
-import type { CatalogItem, DraftLine, Lot, Pending, Product, StockedProduct, Unit } from './lib/types';
+import type { CatalogItem, DraftLine, Lot, Pending, Product, ShelfDef, StockedProduct, Unit } from './lib/types';
 
 export interface State {
   products: Product[];
@@ -25,6 +25,8 @@ export interface State {
   orderDraft?: Record<string, DraftLine>;
   /** Ordered, not yet delivered. */
   pending?: Pending[];
+  /** Shelf layouts (rows → slots → products). */
+  shelves?: ShelfDef[];
 }
 
 export interface Receipt {
@@ -47,8 +49,10 @@ type Action =
   | { type: 'setTraining'; training: Training | null }
   | { type: 'setDraft'; id: string; line: DraftLine | null }
   | { type: 'placeOrder'; lines: { productId: string; qty: number }[]; at: string }
-  | { type: 'receive'; pendingId: string; receipt: Receipt; at: string }
+  | { type: 'receive'; pendingId: string; parts: Receipt[]; at: string }
   | { type: 'cancelPending'; pendingId: string }
+  | { type: 'saveShelf'; shelf: ShelfDef }
+  | { type: 'deleteShelf'; id: string }
   | { type: 'finishTraining'; date: string }
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
@@ -98,13 +102,21 @@ function reducer(state: State, action: Action): State {
       const added = action.lines.filter((l) => l.qty > 0).map((l) => ({ id: newLot().id, productId: l.productId, qty: l.qty, orderedAt: action.at }));
       return { ...state, pending: [...(state.pending ?? []), ...added], orderDraft: {} };
     }
+    case 'saveShelf': {
+      const list = state.shelves ?? [];
+      const i = list.findIndex((s) => s.id === action.shelf.id);
+      return { ...state, shelves: i < 0 ? [...list, action.shelf] : list.map((s, j) => (j === i ? action.shelf : s)) };
+    }
+    case 'deleteShelf':
+      return { ...state, shelves: (state.shelves ?? []).filter((s) => s.id !== action.id) };
     case 'cancelPending':
       return { ...state, pending: (state.pending ?? []).filter((x) => x.id !== action.pendingId) };
     case 'receive': {
+      // One delivery line can be split into parts with different shelves / best-before dates.
       const pend = (state.pending ?? []).find((x) => x.id === action.pendingId);
       if (!pend) return state;
-      const r = action.receipt;
-      const qty = Math.max(0, r.qty);
+      const parts = action.parts.map((r) => ({ ...r, qty: Math.max(0, r.qty) })).filter((r) => r.qty > 0);
+      const qty = parts.reduce((s, r) => s + r.qty, 0);
       const left = pend.qty - qty;
       const pending = (state.pending ?? []).flatMap((x) => (x.id !== pend.id ? [x] : left > 0 ? [{ ...x, qty: left }] : []));
       let name = '';
@@ -113,27 +125,34 @@ function reducer(state: State, action: Action): State {
         if (p.id !== pend.productId) return p;
         name = p.name;
         unit = p.unit;
-        if (!qty) return p;
-        const lot: Lot = { id: newLot().id, qty, open: false, shelf: r.shelf?.trim() || undefined, expiresAt: r.expiresAt || undefined };
         const lots = [...(p.lots ?? [])];
-        const same = lots.findIndex((l) => !l.open && (l.shelf ?? '') === (lot.shelf ?? '') && (l.expiresAt ?? '') === (lot.expiresAt ?? ''));
-        if (same >= 0) lots[same] = { ...lots[same], qty: lots[same].qty + qty };
-        else lots.push(lot);
+        for (const r of parts) {
+          const lot: Lot = { id: newLot().id, qty: r.qty, open: false, shelf: r.shelf?.trim() || undefined, expiresAt: r.expiresAt || undefined };
+          const same = lots.findIndex((l) => !l.open && (l.shelf ?? '') === (lot.shelf ?? '') && (l.expiresAt ?? '') === (lot.expiresAt ?? ''));
+          if (same >= 0) lots[same] = { ...lots[same], qty: lots[same].qty + r.qty };
+          else lots.push(lot);
+        }
         return { ...p, qty: p.qty + qty, lots };
       });
-      const move: Move = {
+      const moves: Move[] = parts.map((r, i) => ({
         id: newLot().id,
         at: action.at,
         productId: pend.productId,
         name,
-        kind: 'delivered',
-        qty,
+        kind: 'delivered' as const,
+        qty: r.qty,
         unit,
         note:
-          [r.shelf?.trim() && `półka ${r.shelf.trim()}`, r.expiresAt && `ważne do ${formatDate(r.expiresAt)}`, left > 0 && `brakuje ${left}`].filter(Boolean).join(' · ') ||
-          undefined,
-      };
-      return { ...state, products, pending, log: qty ? [move, ...(state.log ?? [])].slice(0, LOG_LIMIT) : state.log };
+          [
+            r.shelf?.trim() && `półka ${r.shelf.trim()}`,
+            r.expiresAt && `ważne do ${formatDate(r.expiresAt)}`,
+            parts.length > 1 && `partia ${i + 1}/${parts.length}`,
+            i === parts.length - 1 && left > 0 && `brakuje ${left}`,
+          ]
+            .filter(Boolean)
+            .join(' · ') || undefined,
+      }));
+      return { ...state, products, pending, log: [...moves.reverse(), ...(state.log ?? [])].slice(0, LOG_LIMIT) };
     }
     case 'setTraining':
       return { ...state, training: action.training };
@@ -182,8 +201,12 @@ interface Store {
   pending: Pending[];
   setDraft: (id: string, line: DraftLine | null) => void;
   placeOrder: (lines: { productId: string; qty: number }[]) => void;
-  receive: (pendingId: string, receipt: Receipt) => void;
+  /** Receive a delivery line, possibly split into parts (shelf + best-before per part). */
+  receive: (pendingId: string, parts: Receipt[]) => void;
   cancelPending: (pendingId: string) => void;
+  shelves: ShelfDef[];
+  saveShelf: (shelf: ShelfDef) => void;
+  deleteShelf: (id: string) => void;
   finishInventory: () => void;
   resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
@@ -345,8 +368,11 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       pending: state.pending ?? [],
       setDraft: (id, line) => dispatch({ type: 'setDraft', id, line }),
       placeOrder: (lines) => dispatch({ type: 'placeOrder', lines, at: new Date().toISOString() }),
-      receive: (pendingId, receipt) => dispatch({ type: 'receive', pendingId, receipt, at: new Date().toISOString() }),
+      receive: (pendingId, parts) => dispatch({ type: 'receive', pendingId, parts, at: new Date().toISOString() }),
       cancelPending: (pendingId) => dispatch({ type: 'cancelPending', pendingId }),
+      shelves: state.shelves ?? [],
+      saveShelf: (shelf) => dispatch({ type: 'saveShelf', shelf }),
+      deleteShelf: (id) => dispatch({ type: 'deleteShelf', id }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
       resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),

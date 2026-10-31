@@ -34,7 +34,9 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
     setSaved(false);
   };
   // Live preview: status band and history react to the edited minimum before saving.
-  const preview = stored ? withStatus({ ...stored, ...draftToProduct(draft), code: draft.code || stored.code, name: draft.name || stored.name }, stored.incoming) : null;
+  const preview = stored
+    ? withStatus({ ...stored, ...draftToProduct(draft), code: draft.code || stored.code, name: draft.name || stored.name }, stored.incoming)
+    : null;
 
   const save = () => {
     const d = draftToProduct(draft);

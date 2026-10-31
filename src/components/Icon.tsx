@@ -26,6 +26,13 @@ const PATHS = {
   chevronRight: <path d="M9 6l6 6-6 6" />,
   chevronLeft: <path d="M15 6l-6 6 6 6" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  chevronUp: <path d="M6 15l6-6 6 6" />,
+  shelf: (
+    <>
+      <path d="M4 3v18M20 3v18M4 9h16M4 15h16M4 21h16" />
+      <path d="M8 9V6M11 9V5.5M15 15v-3.5M17.5 15v-3" />
+    </>
+  ),
   truck: (
     <>
       <path d="M3 6h11v10H3zM14 9h4l3 3v4h-7" />

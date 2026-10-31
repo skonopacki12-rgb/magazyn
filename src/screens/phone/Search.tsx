@@ -36,6 +36,9 @@ export function PhoneSearch() {
             <Link to="/produkt/nowy" aria-label="Dodaj produkt" className="icon-btn icon-btn--boxed">
               <Icon name="plus" size={22} strokeWidth={2} />
             </Link>
+            <Link to="/polki" aria-label="Półki" className="icon-btn icon-btn--boxed">
+              <Icon name="shelf" size={22} />
+            </Link>
             <AccountMenu compact />
           </div>
         </div>
