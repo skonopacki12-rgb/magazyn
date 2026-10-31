@@ -45,6 +45,23 @@ export interface Product {
   lots?: Lot[];
 }
 
+/** An ordered product that hasn't arrived yet. */
+export interface Pending {
+  id: string;
+  productId: string;
+  qty: number;
+  /** ISO timestamp of "Dodaj jako oczekujące". */
+  orderedAt: string;
+}
+
+/** Manual changes to the order list: quantity and whether to order. Extra products can be added. */
+export interface DraftLine {
+  qty: number;
+  include: boolean;
+  /** Added by hand (not below minimum). */
+  extra?: boolean;
+}
+
 /** One entry of public/katalog/katalog.json. */
 export interface CatalogItem {
   id: string;
@@ -65,6 +82,8 @@ export interface StockStatus {
   uncounted?: boolean;
   /** qty below min (out-of-stock with min 0 does not count). */
   needs: boolean;
+  /** Units already ordered and on their way (pending deliveries). */
+  incoming: number;
   toOrder: number;
 }
 

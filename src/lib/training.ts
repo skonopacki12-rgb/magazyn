@@ -44,7 +44,7 @@ export interface Training {
   empty: string[];
 }
 
-export type MoveKind = 'used' | 'waste' | 'other' | 'moved' | 'opened' | 'consumed';
+export type MoveKind = 'used' | 'waste' | 'other' | 'moved' | 'opened' | 'consumed' | 'delivered';
 
 export const MOVE_LABEL: Record<MoveKind, string> = {
   used: 'Zużyte do końca',
@@ -53,6 +53,7 @@ export const MOVE_LABEL: Record<MoveKind, string> = {
   moved: 'Przeniesione na inną półkę',
   opened: 'Otwarte',
   consumed: 'Zejście',
+  delivered: 'Dostawa',
 };
 
 export interface Move {

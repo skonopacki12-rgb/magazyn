@@ -1,7 +1,8 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
-import { CopyButton, OrderGroups, useOrders } from '../../components/Orders';
+import { OrderSummary } from '../../components/Orders';
 import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
@@ -19,7 +20,6 @@ import { useStockPanel, type StockPanelInit } from './useStockPanel';
 export function TabletStock({ init }: { init?: StockPanelInit }) {
   const { state, needs } = useStore();
   const m = useStockPanel('product', init);
-  const orders = useOrders();
   const outN = needs.filter((p) => p.isOut).length;
   const n = m.results.length;
   const emptyKind = !m.all.length ? 'empty' : !m.hasQuery ? 'pick' : m.matched.length ? 'cat' : 'none';
@@ -28,13 +28,12 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
     <div className="wide">
       <TopBar variant="tablet">
         <span className="spacer" />
-        <span className="subtitle">Stan z inwentaryzacji: {formatDate(state.lastCount)}</span>
         <Link to="/katalog" className="btn btn--ghost btn--r12">
           Z folderów
         </Link>
         <button type="button" className="btn btn--ghost btn--r12" onClick={m.openNew}>
           <Icon name="plus" size={18} />
-          Dodaj produkt
+          <span className="label-wide">Dodaj produkt</span>
         </button>
       </TopBar>
       <div className="md">
@@ -67,7 +66,10 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
                 <Icon name="chevronRight" size={20} />
               </button>
             )}
-            <h2 className="eyebrow">{m.hasQuery ? countResults(n) : countProducts(n)}</h2>
+            <div className="heading-row">
+              <h2 className="eyebrow">{m.hasQuery ? countResults(n) : countProducts(n)}</h2>
+              <span className="hint">stan z {formatDate(state.lastCount)}</span>
+            </div>
             {n > 0 && (
               <ul className="rows">
                 {m.results.map((p) => {
@@ -114,6 +116,7 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
                 </button>
               </div>
               <StatusBand p={m.sel} variant="xl" />
+              <IncomingNote p={m.sel} />
               <div className="stat-grid">
                 <div className="stat">
                   <span className="muted" style={{ fontSize: 14, lineHeight: '20px' }}>
@@ -153,13 +156,10 @@ export function TabletStock({ init }: { init?: StockPanelInit }) {
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
                 <div className="stack-4">
                   <h2 className="title-lg">Do zamówienia</h2>
-                  <p className="subtitle subtitle--lg">
-                    Poniżej minimum · zamówione {orders.doneCount} z {orders.total}
-                  </p>
+                  <p className="subtitle subtitle--lg">Poniżej minimum, po odjęciu tego, co jest w drodze</p>
                 </div>
-                <CopyButton m={orders} className="btn btn--primary btn--md" short />
               </div>
-              <OrderGroups m={orders} variant="tablet" headingLevel="h3" />
+              <OrderSummary />
             </div>
           )}
 

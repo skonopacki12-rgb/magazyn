@@ -2215,3 +2215,113 @@ button.trow:hover {
   min-height: 60px;
   padding: 8px 14px;
 }
+
+/* ───────── Orders (draft + deliveries) ───────── */
+.draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  min-height: 72px;
+  padding: 10px 14px;
+}
+.draft__check {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.draft__info {
+  flex: 1 1 180px;
+  cursor: pointer;
+}
+.draft__name {
+  font-size: 15px;
+  line-height: 20px;
+}
+.draft__qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.draft.is-skipped .draft__name {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.draft.is-skipped .draft__qty {
+  opacity: 0.45;
+}
+.codes {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 14;
+}
+.order-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btn:disabled.btn--ghost {
+  opacity: 0.5;
+}
+
+.incoming {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 1279px) {
+  .topbar--tablet {
+    gap: 8px 12px;
+    padding: 10px 16px;
+  }
+  .topbar--tablet .topbar__link {
+    padding: 0 12px;
+  }
+  .topbar--tablet .live-pill {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .topbar .label-wide {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .topbar .account__trigger,
+  .topbar .btn {
+    padding: 0 12px;
+  }
+}
+@media (max-width: 1023px) {
+  .topbar__brand {
+    display: none;
+  }
+  .topbar--tablet .topbar__link {
+    padding: 0 10px;
+    gap: 6px;
+  }
+}

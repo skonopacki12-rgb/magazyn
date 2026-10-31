@@ -3,8 +3,9 @@ import { useAuth, Splash } from './auth';
 import { api, ApiError } from './lib/api';
 import { withStatus } from './lib/stock';
 import { applyTraining, buildTraining, type Move, type Training } from './lib/training';
-import { todayIso } from './lib/text';
-import type { CatalogItem, Lot, Product, StockedProduct, Unit } from './lib/types';
+import { formatDate, todayIso } from './lib/text';
+import { newLot } from './lib/fifo';
+import type { CatalogItem, DraftLine, Lot, Pending, Product, StockedProduct, Unit } from './lib/types';
 
 export interface State {
   products: Product[];
@@ -20,6 +21,16 @@ export interface State {
   training?: Training | null;
   /** Stock movements outside inventories (newest first, capped). */
   log?: Move[];
+  /** Manual edits of the order list, by product id. */
+  orderDraft?: Record<string, DraftLine>;
+  /** Ordered, not yet delivered. */
+  pending?: Pending[];
+}
+
+export interface Receipt {
+  qty: number;
+  shelf?: string;
+  expiresAt?: string;
 }
 
 const LOG_LIMIT = 300;
@@ -34,6 +45,10 @@ type Action =
   | { type: 'setCount'; id: string; value: string }
   | { type: 'setLots'; id: string; lots: Lot[] }
   | { type: 'setTraining'; training: Training | null }
+  | { type: 'setDraft'; id: string; line: DraftLine | null }
+  | { type: 'placeOrder'; lines: { productId: string; qty: number }[]; at: string }
+  | { type: 'receive'; pendingId: string; receipt: Receipt; at: string }
+  | { type: 'cancelPending'; pendingId: string }
   | { type: 'finishTraining'; date: string }
   | { type: 'finishInventory'; date: string }
   | { type: 'toggleOrdered'; id: string }
@@ -50,7 +65,8 @@ function reducer(state: State, action: Action): State {
     case 'replace':
       return action.state;
     case 'reset':
-      if (action.mode === 'products') return { ...state, products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {}, training: null };
+      if (action.mode === 'products')
+        return { ...state, products: [], lastCount: action.date, counts: {}, ordered: {}, countLots: {}, training: null, pending: [], orderDraft: {} };
       return { ...state, products: state.products.map((p) => ({ ...p, qty: 0, lots: [] })), counts: {}, ordered: {}, countLots: {}, training: null };
     case 'addMany':
       return { ...state, products: [...state.products, ...action.products] };
@@ -73,6 +89,51 @@ function reducer(state: State, action: Action): State {
       // Typing a number by hand drops the batch breakdown for that product.
       const { [action.id]: _drop, ...rest } = state.countLots ?? {};
       return { ...state, counts: { ...state.counts, [action.id]: action.value }, countLots: rest };
+    }
+    case 'setDraft': {
+      const { [action.id]: _old, ...rest } = state.orderDraft ?? {};
+      return { ...state, orderDraft: action.line ? { ...rest, [action.id]: action.line } : rest };
+    }
+    case 'placeOrder': {
+      const added = action.lines.filter((l) => l.qty > 0).map((l) => ({ id: newLot().id, productId: l.productId, qty: l.qty, orderedAt: action.at }));
+      return { ...state, pending: [...(state.pending ?? []), ...added], orderDraft: {} };
+    }
+    case 'cancelPending':
+      return { ...state, pending: (state.pending ?? []).filter((x) => x.id !== action.pendingId) };
+    case 'receive': {
+      const pend = (state.pending ?? []).find((x) => x.id === action.pendingId);
+      if (!pend) return state;
+      const r = action.receipt;
+      const qty = Math.max(0, r.qty);
+      const left = pend.qty - qty;
+      const pending = (state.pending ?? []).flatMap((x) => (x.id !== pend.id ? [x] : left > 0 ? [{ ...x, qty: left }] : []));
+      let name = '';
+      let unit = '';
+      const products = state.products.map((p) => {
+        if (p.id !== pend.productId) return p;
+        name = p.name;
+        unit = p.unit;
+        if (!qty) return p;
+        const lot: Lot = { id: newLot().id, qty, open: false, shelf: r.shelf?.trim() || undefined, expiresAt: r.expiresAt || undefined };
+        const lots = [...(p.lots ?? [])];
+        const same = lots.findIndex((l) => !l.open && (l.shelf ?? '') === (lot.shelf ?? '') && (l.expiresAt ?? '') === (lot.expiresAt ?? ''));
+        if (same >= 0) lots[same] = { ...lots[same], qty: lots[same].qty + qty };
+        else lots.push(lot);
+        return { ...p, qty: p.qty + qty, lots };
+      });
+      const move: Move = {
+        id: newLot().id,
+        at: action.at,
+        productId: pend.productId,
+        name,
+        kind: 'delivered',
+        qty,
+        unit,
+        note:
+          [r.shelf?.trim() && `półka ${r.shelf.trim()}`, r.expiresAt && `ważne do ${formatDate(r.expiresAt)}`, left > 0 && `brakuje ${left}`].filter(Boolean).join(' · ') ||
+          undefined,
+      };
+      return { ...state, products, pending, log: qty ? [move, ...(state.log ?? [])].slice(0, LOG_LIMIT) : state.log };
     }
     case 'setTraining':
       return { ...state, training: action.training };
@@ -118,6 +179,11 @@ interface Store {
   startTraining: (input: string) => Training;
   updateTraining: (training: Training | null) => void;
   finishTraining: () => void;
+  pending: Pending[];
+  setDraft: (id: string, line: DraftLine | null) => void;
+  placeOrder: (lines: { productId: string; qty: number }[]) => void;
+  receive: (pendingId: string, receipt: Receipt) => void;
+  cancelPending: (pendingId: string) => void;
   finishInventory: () => void;
   resetWarehouse: (mode: ResetMode) => void;
   toggleOrdered: (id: string) => void;
@@ -223,7 +289,9 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
   }, []);
 
   const store = useMemo<Store>(() => {
-    const products = state.products.filter((p) => !p.archived).map(withStatus);
+    const incoming = new Map<string, number>();
+    for (const x of state.pending ?? []) incoming.set(x.productId, (incoming.get(x.productId) ?? 0) + x.qty);
+    const products = state.products.filter((p) => !p.archived).map((p) => withStatus(p, incoming.get(p.id) ?? 0));
     return {
       state,
       products,
@@ -274,6 +342,11 @@ function SyncedStore({ initial, version, onUnauthorized, children }: { initial: 
       },
       updateTraining: (training) => dispatch({ type: 'setTraining', training }),
       finishTraining: () => dispatch({ type: 'finishTraining', date: todayIso() }),
+      pending: state.pending ?? [],
+      setDraft: (id, line) => dispatch({ type: 'setDraft', id, line }),
+      placeOrder: (lines) => dispatch({ type: 'placeOrder', lines, at: new Date().toISOString() }),
+      receive: (pendingId, receipt) => dispatch({ type: 'receive', pendingId, receipt, at: new Date().toISOString() }),
+      cancelPending: (pendingId) => dispatch({ type: 'cancelPending', pendingId }),
       finishInventory: () => dispatch({ type: 'finishInventory', date: todayIso() }),
       resetWarehouse: (mode) => dispatch({ type: 'reset', mode, date: todayIso() }),
       toggleOrdered: (id) => dispatch({ type: 'toggleOrdered', id }),

@@ -171,7 +171,7 @@ function Start({ onStart, done }: { onStart: (text: string) => void; done: Move[
                   </span>
                 </span>
                 <span className="mono" style={{ fontWeight: 600 }}>
-                  {m.kind === 'moved' || m.kind === 'opened' ? '' : '−'}
+                  {m.kind === 'moved' || m.kind === 'opened' ? '' : m.kind === 'delivered' ? '+' : '−'}
                   {m.qty} {m.unit}
                 </span>
                 <span className="hint" style={{ minWidth: 84, textAlign: 'right' }}>

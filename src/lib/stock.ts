@@ -1,8 +1,10 @@
 import type { Product, StockedProduct } from './types';
 
-export function withStatus(p: Product): StockedProduct {
+/** `incoming` = units already ordered (pending deliveries); they reduce what still needs ordering. */
+export function withStatus(p: Product, incoming = 0): StockedProduct {
   if (!p.hist.length && p.qty === 0)
-    return { ...p, isOut: false, isLow: false, isOk: false, uncounted: true, needs: false, toOrder: 0 };
+    return { ...p, isOut: false, isLow: false, isOk: false, uncounted: true, needs: false, toOrder: 0, incoming };
+  const toOrder = Math.max(p.min - p.qty - incoming, 0);
   const isOut = p.qty === 0;
   const isLow = !isOut && p.qty < p.min;
   return {
@@ -10,8 +12,9 @@ export function withStatus(p: Product): StockedProduct {
     isOut,
     isLow,
     isOk: !isOut && !isLow,
-    needs: p.qty < p.min,
-    toOrder: Math.max(p.min - p.qty, 0),
+    needs: toOrder > 0,
+    toOrder,
+    incoming,
   };
 }
 

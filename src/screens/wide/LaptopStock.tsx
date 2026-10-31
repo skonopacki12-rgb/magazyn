@@ -1,7 +1,8 @@
 import { CategoryChips, chipLabel } from '../../components/CategoryChips';
+import { IncomingNote } from '../../components/Incoming';
 import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
-import { CopyButton, OrderGroups, useOrders } from '../../components/Orders';
+import { OrderSummary } from '../../components/Orders';
 import { ProductFields } from '../../components/ProductForm';
 import { SearchField } from '../../components/SearchField';
 import { TopBar } from '../../components/Shell';
@@ -19,7 +20,6 @@ import { useStockPanel, type StockPanelInit } from './useStockPanel';
 export function LaptopStock({ init }: { init?: StockPanelInit }) {
   const { state, needs } = useStore();
   const m = useStockPanel('order', init);
-  const orders = useOrders();
   const n = m.results.length;
   const emptyKind = !m.all.length ? 'empty' : m.matched.length ? 'cat' : 'none';
   const showOrder = m.panel === 'order' || (m.panel === 'product' && !m.sel);
@@ -28,9 +28,8 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
     <div className="wide">
       <TopBar variant="laptop">
         <span className="spacer" />
-        <span className="subtitle">Stan z inwentaryzacji: {formatDate(state.lastCount)}</span>
         <Link to="/katalog" className="btn btn--ghost">
-          Dodaj produkty z folderów (domyślne)
+          Z folderów
         </Link>
         <button type="button" className="btn btn--primary" onClick={m.openNew}>
           <Icon name="plus" size={18} />
@@ -44,7 +43,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
               <div className="stack-2">
                 <h1 className="title-md">Stany magazynowe</h1>
                 <p className="subtitle subtitle--lg">
-                  {countProducts(m.all.length)} · {needs.length} do zamówienia
+                  {countProducts(m.all.length)} · {needs.length} do zamówienia · stan z inwentaryzacji {formatDate(state.lastCount)}
                 </p>
               </div>
               <SearchField
@@ -154,22 +153,9 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
               <div>
                 <div className="stack-4" style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)' }}>
                   <h2 style={{ fontSize: 20, lineHeight: '26px', fontWeight: 700 }}>Do zamówienia</h2>
-                  <p className="subtitle">
-                    Poniżej minimum · zamówione {orders.doneCount} z {orders.total}
-                  </p>
+                  <p className="subtitle">Poniżej minimum, po odjęciu tego, co jest w drodze</p>
                 </div>
-                {orders.total ? (
-                  <OrderGroups m={orders} variant="aside" headingLevel="h3" />
-                ) : (
-                  <p className="empty__text" style={{ padding: '16px 20px 18px' }}>
-                    {m.all.length ? 'Wszystkie produkty są powyżej minimum.' : 'Nic do zamówienia.'}
-                  </p>
-                )}
-                {orders.total > 0 && (
-                  <div style={{ padding: '14px 20px 18px', borderTop: '1px solid var(--line)', marginTop: 8 }}>
-                    <CopyButton m={orders} className="btn btn--primary btn--md btn--block" short />
-                  </div>
-                )}
+                <OrderSummary compact />
               </div>
             )}
 
@@ -192,6 +178,7 @@ export function LaptopStock({ init }: { init?: StockPanelInit }) {
                     </div>
                   </div>
                   <StatusBand p={m.sel} variant="rounded" />
+                  <IncomingNote p={m.sel} />
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
                     <div className="stack-2">
                       <span className="subtitle">{m.sel.uncounted ? 'Jeszcze nie liczony' : `Stan z ${formatDate(state.lastCount)}`}</span>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { IncomingNote } from '../../components/Incoming';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { History } from '../../components/History';
 import { Icon } from '../../components/Icon';
@@ -33,7 +34,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
     setSaved(false);
   };
   // Live preview: status band and history react to the edited minimum before saving.
-  const preview = stored ? withStatus({ ...stored, ...draftToProduct(draft), code: draft.code || stored.code, name: draft.name || stored.name }) : null;
+  const preview = stored ? withStatus({ ...stored, ...draftToProduct(draft), code: draft.code || stored.code, name: draft.name || stored.name }, stored.incoming) : null;
 
   const save = () => {
     const d = draftToProduct(draft);
@@ -99,6 +100,7 @@ export function PhoneProduct({ isNew }: { isNew?: boolean }) {
           </section>
         )}
 
+        {preview && <IncomingNote p={preview} />}
         {preview && <LotsList lots={preview.lots ?? []} unit={preview.unit} />}
 
         <section className="stack-4" style={{ gap: 14 }}>

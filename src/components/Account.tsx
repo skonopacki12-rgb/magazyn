@@ -38,7 +38,7 @@ export function AccountMenu({ compact }: { compact?: boolean }) {
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name="user" size={compact ? 22 : 18} />
-        {!compact && <span>{user.name}</span>}
+        {!compact && <span className="label-wide">{user.name}</span>}
       </button>
       {open && (
         <div className="account__menu">

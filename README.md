@@ -89,6 +89,17 @@ Po zakończeniu inwentaryzacji:
 - ekran **Terminy i otwarte** (`/terminy`, baner na liście i menu konta) zbiera partie po terminie,
   z terminem ≤ 14 dni i wszystkie otwarte butelki.
 
+## Zamówienia i dostawy
+
+**Zamówienia** (`/zamowienia`, zakładka „Do zamówienia” w menu):
+- **Do zamówienia** — lista tworzy się sama z produktów poniżej minimum (po odjęciu tego, co już jest
+  w drodze). Każdą pozycję można odznaczyć, zmienić jej ilość albo dopisać inny produkt z magazynu.
+  Poniżej jest gotowa **lista kodów** (`kod ⇥ ilość`) i przycisk „Kopiuj kody”.
+- **Dodaj do stanów jako oczekujące** — zaznaczone pozycje trafiają do zakładki **W drodze**.
+- **W drodze** — przy dostawie wpisujesz ile dotarło, **półkę** i **datę ważności**, potem „Przyjmij”.
+  Towar dochodzi do stanu jako nowa partia (zamknięta). Jeśli dotarło mniej, brakująca część zostaje
+  jako oczekująca. Pozycję można też anulować. Dostawy trafiają do dziennika ruchów.
+
 ## Półki i szkolenie
 
 Każda partia ma pole **Półka** (np. A2) — wpisujesz je w inwentaryzacji; aplikacja podpowiada półki już używane.
