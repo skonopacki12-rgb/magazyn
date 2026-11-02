@@ -79,7 +79,7 @@ export function ShelfPreview({ shelf, byId, showStock, captions, size = 'md', on
     }),
   );
   return (
-    <div className={`rack rack--${size}`} role="img" aria-label={`Podgląd półki ${shelf.name}`}>
+    <div className={`rack rack--${size}${shelf.rotated ? ' rack--rot' : ''}`} role="img" aria-label={`Podgląd półki ${shelf.name}`}>
       {shelf.rows.map((row, r) => (
         <div key={row.id} className="rack__row">
           <div className="rack__slots">

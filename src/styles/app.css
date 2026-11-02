@@ -2962,3 +2962,55 @@ button.rack__slot:hover {
 .lot__qty .stepper__input {
   width: 72px;
 }
+
+/* Shelf view turned by 90°: each row is a column (row 1 on the left), its slots go top to bottom. */
+.rack--rot {
+  --slot-h: clamp(84px, 11vw, 132px);
+  display: flex;
+  align-items: stretch;
+  padding: 10px 0 10px 10px;
+  border-bottom-width: 6px;
+  border-right-width: 10px;
+  overflow-x: auto;
+}
+.rack--rot.rack--sm {
+  --slot-h: 40px;
+  padding: 6px 0 6px 6px;
+}
+.rack--rot .rack__row {
+  flex: 1 1 0;
+  min-width: 64px;
+  display: flex;
+}
+.rack--rot.rack--sm .rack__row {
+  min-width: 24px;
+}
+.rack--rot .rack__row + .rack__row {
+  margin-top: 0;
+  margin-left: 0;
+}
+.rack--rot .rack__slots {
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  padding: 0 4px;
+  gap: 4px;
+}
+.rack--rot .rack__slot {
+  flex: none;
+  height: var(--slot-h);
+}
+.rack--rot .rack__board {
+  flex: none;
+  width: 10px;
+  height: auto;
+  margin: -10px 0;
+  border-bottom: 0;
+  border-right: 4px solid var(--shelf-edge);
+}
+.rack--rot.rack--sm .rack__board {
+  width: 5px;
+  margin: -6px 0;
+  border-right-width: 2px;
+}

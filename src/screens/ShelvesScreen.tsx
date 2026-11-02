@@ -381,6 +381,9 @@ export function ShelfEditor() {
               <input type="checkbox" checked={captions} onChange={() => setCaptions(!captions)} />
               Podpisy
             </label>
+            <button type="button" className="btn btn--ghost btn--md" aria-pressed={!!shelf.rotated} onClick={() => save({ rotated: !shelf.rotated })}>
+              ↻ Obróć o 90°
+            </button>
           </div>
           <ShelfPreview shelf={shelf} byId={byId} showStock={showStock} captions={captions} over={over} />
           <PrintSheet shelf={shelf} byId={byId} />

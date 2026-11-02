@@ -69,6 +69,8 @@ export interface ShelfDef {
   name: string;
   /** Top row first. */
   rows: ShelfRow[];
+  /** View turned by 90°: rows shown as columns side by side (row 1 on the left), slots top to bottom. */
+  rotated?: boolean;
 }
 
 /** An ordered product that hasn't arrived yet. */
